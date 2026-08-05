@@ -1,0 +1,1 @@
+date,task,task_class,surface,model,verified_0_5,human_baseline_min,human_active_min,wall_min,repair_loops,handoffs,handoff_min,change_quality_0_5,reliability_0_5,dx_0_5,marginal_cost_usd,accepted,meaningful_defects_found,notes
