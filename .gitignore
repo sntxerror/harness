@@ -1,0 +1,24 @@
+# secrets and local overrides
+*.secret
+*.secrets
+*.local.json
+*.local.yaml
+.env
+.env.*
+
+# runtime artifacts and state
+artifacts/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+sessions/
+traces/
+
+# editor/OS noise
+.vscode/
+.idea/
+.DS_Store
+*.swp
+node_modules/
+__pycache__/

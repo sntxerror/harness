@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ultimate-pi/PortableSessionBundleV1.schema.json",
+  "title": "PortableSessionBundleV1 manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "bundleId",
+    "generatedAt",
+    "source",
+    "repository",
+    "compatibilityHash",
+    "portability",
+    "members",
+    "redactionPolicyVersion"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "bundleId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["harness", "sessionId", "activeBranchId"],
+      "properties": {
+        "harness": { "type": "string", "minLength": 1 },
+        "sessionId": { "type": "string", "minLength": 1 },
+        "activeBranchId": { "type": "string", "minLength": 1 },
+        "runId": { "type": ["string", "null"] },
+        "phaseId": { "type": ["string", "null"] },
+        "provider": { "type": ["string", "null"] },
+        "model": { "type": ["string", "null"] }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repositoryId", "baseCommit", "treeHash"],
+      "properties": {
+        "repositoryId": { "$ref": "#/$defs/hash" },
+        "baseCommit": { "type": "string", "minLength": 1 },
+        "treeHash": { "type": "string", "minLength": 1 },
+        "worktreeId": { "type": ["string", "null"] }
+      }
+    },
+    "compatibilityHash": { "$ref": "#/$defs/hash" },
+    "portability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grade", "reasons"],
+      "properties": {
+        "grade": { "enum": ["complete", "partial", "failed"] },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "members": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/member" }
+    },
+    "redactionPolicyVersion": { "type": "string", "minLength": 1 },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "mediaType", "retention"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "mediaType": { "type": "string", "minLength": 1 },
+        "retention": { "enum": ["ephemeral", "run", "project", "audit"] },
+        "redacted": { "type": "boolean" },
+        "requiredForContinuation": { "type": "boolean" }
+      }
+    }
+  }
+}

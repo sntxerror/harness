@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ultimate-pi/TaskEnvelopeV1.schema.json",
+  "title": "TaskEnvelopeV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "goal",
+    "scope",
+    "constraints",
+    "relevantFiles",
+    "contextRefs",
+    "requiredChecks",
+    "doneWhen",
+    "returnFormat"
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "goal": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repositoryId", "allowedPaths"],
+      "properties": {
+        "repositoryId": { "type": "string", "minLength": 1 },
+        "allowedPaths": { "type": "array", "items": { "type": "string" } },
+        "forbiddenPaths": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "relevantFiles": { "type": "array", "items": { "type": "string" } },
+    "changedFiles": { "type": "array", "items": { "type": "string" } },
+    "contextRefs": { "type": "array", "items": { "type": "string" } },
+    "knownFailures": { "type": "array", "items": { "type": "string" } },
+    "requiredChecks": { "type": "array", "items": { "type": "string" } },
+    "doneWhen": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "returnFormat": { "type": "string", "minLength": 1 }
+  }
+}

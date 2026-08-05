@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ultimate-pi/ProjectCheckResultV1.schema.json",
+  "title": "ProjectCheckResultV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "scope", "level", "treeHash", "status", "checks", "artifacts"],
+  "properties": {
+    "version": { "const": 1 },
+    "scope": { "enum": ["changed", "repository"] },
+    "level": { "enum": ["fast", "full", "release"] },
+    "treeHash": { "type": "string", "minLength": 1 },
+    "changedFilesHash": { "type": ["string", "null"] },
+    "status": { "enum": ["pass", "fail", "blocked", "unconfigured", "cancelled"] },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "exitCode", "durationMs", "diagnostics"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["pass", "fail", "blocked", "unconfigured", "cancelled"] },
+          "exitCode": { "type": ["integer", "null"] },
+          "durationMs": { "type": "integer", "minimum": 0 },
+          "diagnostics": { "type": "array", "items": { "type": "object" } },
+          "artifactRefs": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "artifacts": { "type": "array", "items": { "type": "string" } }
+  }
+}

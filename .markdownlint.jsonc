@@ -1,0 +1,6 @@
+{
+  // match IDE defaults observed in this workspace
+  "default": true,
+  "MD013": false, // long lines allowed — prose documents
+  "MD060": { "style": "compact" }
+}
