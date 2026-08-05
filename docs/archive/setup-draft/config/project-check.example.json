@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "checks": {
+    "fast": [
+      { "name": "format", "command": "REPLACE_WITH_REPOSITORY_FORMAT_CHECK" },
+      { "name": "typecheck", "command": "REPLACE_WITH_REPOSITORY_TYPECHECK" }
+    ],
+    "full": [
+      { "name": "lint", "command": "REPLACE_WITH_REPOSITORY_LINT" },
+      { "name": "test", "command": "REPLACE_WITH_REPOSITORY_TEST" },
+      { "name": "build", "command": "REPLACE_WITH_REPOSITORY_BUILD" }
+    ]
+  }
+}

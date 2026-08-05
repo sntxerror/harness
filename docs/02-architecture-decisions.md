@@ -308,6 +308,22 @@ The normalized rendered prefix is hashed per breakpoint and compared against the
 
 **Rejected:** trusting convention and review; a single combined token metric; estimating savings without traces.
 
+### ADR-036 — Documented decisions are authority, not authorization
+
+**Status:** Accepted (August 2026)
+
+A decision recorded in these documents establishes *what was decided*. It does not constitute standing permission to implement it. Before an agent session implements any architecture decision carried in the `docs/` set — provisioning, account and privilege layout, package and version pins, profile and containment structure, provider/model selection, schema and contract changes, service topology — it presents the decision to the operator and obtains explicit approval for that decision.
+
+Presenting means: name the decision and where it is recorded, state what implementing it commits the system to, note what it rules out, and surface any divergence between the document and the machine's actual state. Approval is per decision. It does not extend to adjacent decisions in the same document, to a later phase of the same runbook, or to a re-run after conditions change. Silence is not approval.
+
+Documented commands are the exception that proves the rule: a runbook command block is reviewed content, not a script to execute on sight. The operator runs privileged commands, or approves each one, in keeping with R-005/R-006 — a password must never be typed into anything the agent can observe.
+
+Reversible, non-privileged work that a decision already covers — reading state, running the read-only preflight, validation and lint, drafting documents, preparing reviewable scripts — proceeds without a new approval.
+
+**Reason:** the documents are dense and highly specific, which makes them read like an execution plan. An agent following them faithfully will provision hosts, create accounts and install package sets without anyone having chosen to do so *now*. Authority over content and authorization to act are different things, and conflating them turns a design record into an autopilot.
+
+**Rejected:** treating a checked-out document as consent; batching several decisions behind one approval; inferring approval from an operator's earlier approval of a related step.
+
 Workflow state is durable outside model context. A run must resume from manifests, envelopes, evidence and repository state even if every model session is discarded. Pi-native compaction remains local to each Pi child conversation.
 
 The first named workflows are `inspect`, `plan`, `implement`, `research`, `release` and `incident`. Known invocations are deterministic code phases using the authoritative `Executor`; they are never rediscovered by a tester agent. Phase execution success and run acceptance are separate recorded facts.

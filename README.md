@@ -29,21 +29,22 @@ The plan is ordered so the system becomes usable for its own development as earl
 ## Layout
 
 ```text
-docs/       implementation authority (00–10 + reviews/)
-schemas/    canonical contracts (AgentProfileV1, TaskEnvelopeV1, …)
-config/     templates — every REPLACE_ value must be resolved before use
-scripts/    bundle validation and read-only server preflight
-tasks/      per-version task files (V0.0 … V1.0)
-ROADMAP.md  version sequence, value statements, switch point
-HANDOFF.md  current state and next actions — read first
-CLAUDE.md   working conventions for agent sessions in this repo
+docs/         implementation authority (00–10 + reviews/)
+docs/archive/ frozen imported predecessor material — reference only, never edited
+schemas/      canonical contracts (AgentProfileV1, TaskEnvelopeV1, …)
+config/       templates — every REPLACE_ value must be resolved before use
+scripts/      bundle validation and read-only server preflight
+tasks/        per-version task files (V0.0 … V1.0)
+ROADMAP.md    version sequence, value statements, switch point
+HANDOFF.md    current state and next actions — read first
+CLAUDE.md     working conventions for agent sessions in this repo
 ```
 
 ## Verification
 
-Both commands are run from the repository root and must be clean before any commit. `validate-bundle.sh` is read-only, requires `jq`, and uses no network.
+Both commands are run from the repository root and must be clean before any commit. `validate-bundle.sh` is read-only, requires `jq`, and uses no network. Both skip `docs/archive/`, which is kept verbatim and must not be able to fail current checks.
 
 ```bash
 bash scripts/validate-bundle.sh
-npx --yes markdownlint-cli2 "docs/**/*.md" "tasks/*.md" "*.md"
+npx --yes markdownlint-cli2
 ```

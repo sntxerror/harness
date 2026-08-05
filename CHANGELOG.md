@@ -1,5 +1,11 @@
 # Bundle Changelog
 
+## 5 August 2026 (governance and host survey)
+
+- Added ADR-036: documented decisions are authority over content, not authorization to act. Agent sessions obtain explicit operator approval per architecture decision before implementing it; runbook command blocks are reviewed content, not scripts to run on sight. Reflected in `CLAUDE.md`, `docs/00` change discipline and the runbook header.
+- Surveyed the remote host and recorded actual facts plus four divergences from the runbook's assumptions in `07` (single sudo-capable account rather than an operator/service split, Ubuntu 26.04, nvm-hidden node/Pi in non-interactive shells, no container runtime).
+- Added `10` §10: provider calibration for the current pin — measured cost/context data from the host's model catalog, the explicit-versus-automatic cache-write distinction across model families, and the list of mechanics that are not yet established for this API surface.
+
 ## 5 August 2026 (V0.0 closeout)
 
 - Closed V0.0: markdown lint clean; `validate-bundle.sh` repaired (dropped the hard `rg` dependency, prunes `.git`, now asserts docs 00–10, all five schemas and a task file per roadmap version); placeholder resolution checklist recorded per template.

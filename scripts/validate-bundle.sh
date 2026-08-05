@@ -16,13 +16,15 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-# Every tracked JSON file must parse. .git and node_modules are never inspected.
+# Every tracked JSON file must parse. .git, node_modules and the frozen
+# docs/archive tree are never inspected — archived material is kept verbatim and
+# must not be able to fail the current repository's checks.
 json_count=0
 while IFS= read -r -d '' json_file; do
   jq empty "$json_file"
   json_count=$((json_count + 1))
 done < <(find "$bundle_root" \
-  \( -name .git -o -name node_modules \) -prune -o \
+  \( -name .git -o -name node_modules -o -path "$bundle_root/docs/archive" \) -prune -o \
   -type f -name '*.json' -print0)
 
 # Deployment placeholders are intentional in config/ templates and must stay

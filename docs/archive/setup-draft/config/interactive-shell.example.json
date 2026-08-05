@@ -1,0 +1,20 @@
+{
+  "spawn": {
+    "commands": {
+      "pi": "pi",
+      "codex": "codex",
+      "claude": "claude"
+    },
+    "defaultArgs": {
+      "pi": [],
+      "codex": [],
+      "claude": []
+    },
+    "worktree": true,
+    "worktreeBaseDir": "~/.pi/worktrees/external"
+  },
+  "transferLines": 200,
+  "transferMaxChars": 20000,
+  "completionNotifyLines": 50,
+  "completionNotifyMaxChars": 5000
+}

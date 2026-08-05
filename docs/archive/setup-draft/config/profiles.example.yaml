@@ -1,0 +1,54 @@
+version: 1
+
+profiles:
+  trusted-local:
+    executor: host
+    interaction: attended
+    sudo: interactive_user_only
+    network: host
+    configMutableDuringSession: false
+    extensions:
+      - permission-system
+      - interactive-shell
+      - ask-user-question
+      - codegraph-adapter
+      - pi-lens
+    modelTools:
+      - read
+      - write
+      - edit
+      - bash
+      - grep
+      - project_check
+
+  isolated-local:
+    executor: gondolin
+    interaction: attended
+    sudo: deny
+    network: declared_allowlist
+    configMutableDuringSession: false
+    hostToolsHidden:
+      - interactive_shell
+      - generic_mcp_filesystem
+      - generic_mcp_shell
+      - foreign_agent_raw_spawn
+
+  server-worker:
+    executor: rootless_worker
+    interaction: supervised
+    sudo: deny
+    network: none
+    configMutableDuringSession: false
+    writableMounts:
+      - /workspace
+      - /artifacts
+    forbiddenMounts:
+      - host_home
+      - docker_socket
+      - ssh_agent_socket
+      - production_config
+    limits:
+      cpu: 4
+      memory: 8GiB
+      pids: 512
+      wallTime: 60m

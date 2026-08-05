@@ -146,3 +146,47 @@ Applied to any change that touches prompt assembly, tool registration, retrieval
 - [ ] Long tool chains place intermediate breakpoints (§3).
 - [ ] Fan-out is sequenced per §7.
 - [ ] The smoke suite still shows non-zero cache reads and an unchanged prefix hash.
+
+## 10. Provider calibration — the current pin
+
+§1, §2, §5 and §6 are provider-independent: prefix matching, zone assignment, verification and append-only state hold wherever we run. **§3 and §7 are not.** Breakpoint counts, lookback windows, minimum cacheable prefixes and TTLs are provider mechanics, and the numbers cited there are the shape of an explicit-breakpoint API. They must be re-derived per pin rather than inherited, which is what R-016 has always required.
+
+### 10.1 Measured facts
+
+From `~/.pi/agent/models-store.json` on the server (surveyed 5 August 2026 — this is on-machine catalog data, not an estimate):
+
+| Property | `gpt-5.6-sol` via `openai-codex` | `openai/gpt-5.6-sol` via `openrouter` |
+| --- | --- | --- |
+| API surface | `openai-codex-responses` | OpenRouter-mediated |
+| Context window | 272,000 | 1,050,000 |
+| Max output | 128,000 | 128,000 |
+| Input / output per Mtok | $5 / $30 | $5 / $30 |
+| Cache read | $0.50 — 0.1× input | $0.50 — 0.1× input |
+| Cache write | $6.25 — **1.25× input** | $6.25 — 1.25× input |
+| Above 272k tokens | All prices double | No tier premium listed |
+| Declared compatibility | OpenAI grammar tools, tool search | — |
+
+Two consequences worth stating plainly:
+
+- **Cache writes are billed at a premium on this pin, so placement is an economic decision, not a free optimization.** At 1.25× write and 0.1× read, a cached prefix pays for itself on the second request (1.25 + 0.1 < 2.0) — the same break-even as §7 states generically, so that guidance survives the provider change intact.
+- **Not every model on this host behaves this way.** `gpt-5.4`, `gpt-5.5` and `gpt-5.3-codex-spark` carry `cacheWrite: 0` — writes are free, caching is automatic, and there is nothing to place. The whole `gpt-5.6` family (`sol`, `luna`, `terra`) bills writes. A conclusion measured on one of these models does not transfer to the other group, and a future model swap must re-check which group it lands in.
+
+The two routes to the same model are materially different: 272k versus 1.05M context, with a doubling tier on the direct route that the direct route's own context window makes largely unreachable. Route choice is therefore a real decision (§10.3), not a preference.
+
+### 10.2 What is not yet established
+
+Unknown for `openai-codex-responses`, and not to be assumed from §3:
+
+- whether cache segmentation is explicit (author-placed breakpoints) or automatic (provider-chosen prefix), which determines whether §3 is a set of instructions or merely a description of someone else's API;
+- the minimum cacheable prefix;
+- cache lifetime, and whether more than one TTL exists;
+- whether a lookback window bounds reuse across long tool chains (R-082's failure mode is only reachable if it does);
+- which usage fields the response exposes, since §5.2's three-field requirement depends on the provider reporting them separately.
+
+These are answered by measurement, not by reading: run the scripted session twice and read the counters. Assigned to V0.3-T10, with the route decision at V0.1-T2. Until they are answered, §3 is documentation of a mechanism we may not have, and the honest position is that only the provider-independent sections are in force.
+
+One asset already exists: Pi's own `showCacheMissNotices` setting is enabled on the server, so the harness surfaces cache misses without us building anything. That is the cheapest available input to V0.3-T4/T8 and should be the first signal wired in, not a bespoke probe.
+
+### 10.3 Open route decision
+
+The direct `openai-codex` route is the ChatGPT-subscription path; OpenRouter reaches the same model with a 3.9× larger context window. Deciding between them is not only cost and context — it determines the API surface, the usage fields available for §5.2, and whether cache mechanics are ours to control. Deferred to V0.1-T2 with this data attached, and recorded in the session manifest either way: `provider` and an **exact** model ID, never an alias, because alias drift silently changes the prefix and there is no error when it does.

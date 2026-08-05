@@ -1,0 +1,22 @@
+[Unit]
+Description=Hermes Agent messaging gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Template only: confirm the foreground command, executable path and supported
+# sandbox directives against the pinned Hermes/systemd versions before enable.
+Type=simple
+UMask=0077
+Environment=HERMES_HOME=%h/.hermes
+ExecStart=/usr/bin/env hermes gateway
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.hermes %h/.local/state/pi-factory %h/.local/share/pi-factory /srv/pi-agent
+
+[Install]
+WantedBy=default.target

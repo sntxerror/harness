@@ -21,6 +21,7 @@ This documentation set separates current implementation authority from history, 
 | `09-topology-and-clients.md` | Authoritative design supplement | Control plane/runners/clients topology, placement policy, session transfer, viewing layers (forge/IDE/web UI), A2A interop stance |
 | `10-context-and-cache-discipline.md` | Authoritative mechanism | Request zones, breakpoint placement, append-only mutation channels, cache verification and the per-version obligations implementing ADR-007 |
 | `reviews/` | Point-in-time findings | Dated verification of a subsystem against the bundle and external experience; records findings, changes nothing |
+| `archive/` | Frozen, non-authoritative | Imported predecessor material (earlier plans, critiques, experiments) kept verbatim for provenance. Never edited, never linted, never cited as authority — if something in it still matters, restate it in an authoritative document |
 
 ## Reading order
 
@@ -35,6 +36,7 @@ This documentation set separates current implementation authority from history, 
 
 ## Change discipline
 
+- **These documents are authority over content, not authorization to act.** An agent session obtains explicit operator approval for each architecture decision before implementing it; a command block here is reviewed content, not a script to run on sight (ADR-036).
 - A settled decision is changed first in the architecture decision record, including rationale and consequences.
 - The implementation plan is then updated to match.
 - New uncertainty goes into the risk register with an owner, test and promotion criterion.

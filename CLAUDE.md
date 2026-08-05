@@ -2,6 +2,20 @@
 
 Read `HANDOFF.md` first for current state. This file is how to work here, not what the system is — that lives in `docs/`, starting at `docs/00-documentation-index.md`.
 
+## Ask before implementing any documented decision (ADR-036)
+
+**The documents record what was decided. They are not permission to do it now.** Before implementing any architecture decision from `docs/` — provisioning, accounts and privileges, package or version pins, profile and containment layout, provider/model choice, schema or contract changes, service topology — put it to the operator and wait for an explicit answer.
+
+When asking, give: the decision and where it is recorded, what implementing it commits us to, what it rules out, and any place the document disagrees with the machine's actual state.
+
+- Approval is **per decision**. It does not carry to the next decision in the same document, the next phase of the same runbook, or a re-run after something changed.
+- A command block in a runbook is **reviewed content, not a script to run on sight**. Privileged commands are the operator's to run; a password is never typed into anything an agent can observe (R-005/R-006).
+- Silence is not approval. Neither is the operator having approved a related step earlier.
+
+Proceed without asking only for reversible, non-privileged work already covered by a decision: reading state, the read-only preflight, validation and lint, drafting documents, preparing scripts for review.
+
+These documents are specific enough to read like an execution plan. Following them faithfully will provision hosts and create accounts that nobody chose to create today — which is the failure this rule exists to prevent.
+
 ## What this repository is
 
 The canonical home of the Ultimate Pi Agent System. Today it is documentation, schemas, config templates and a task tracker; code lands as versions are implemented. `docs/` is implementation authority — an idea appearing in `docs/04-brainstorm-evolution.md` is history, not permission to build.
@@ -35,10 +49,10 @@ Corollary: do not fix a doc/code disagreement by editing the code to match a sta
 
 ```bash
 bash scripts/validate-bundle.sh
-npx --yes markdownlint-cli2 "docs/**/*.md" "tasks/*.md" "*.md"
+npx --yes markdownlint-cli2
 ```
 
-Both must be clean. `validate-bundle.sh` is read-only, needs `jq`, and takes no network.
+Both must be clean. `validate-bundle.sh` is read-only, needs `jq`, and takes no network. Globs and ignores live in `.markdownlint-cli2.jsonc`; rule config in `.markdownlint.jsonc`. Both tools skip `docs/archive/` — frozen imported material, kept verbatim, never edited and never a reason for a check to fail.
 
 ## Writing style for this repo
 

@@ -1,0 +1,41 @@
+version: 1
+
+defaults:
+  execution: background
+  interaction: supervised
+  attachable: true
+  questionChannel: broker
+  concurrency: 2
+
+routes:
+  - role: explore
+    executor: pi
+    modelClass: fast
+    access: read_only
+    workspace: current
+
+  - role: implement
+    complexity: high
+    executor: codex-cli
+    modelClass: strong_coding
+    access: write
+    workspace: worktree
+
+  - role: review
+    executor: claude-code
+    modelClass: independent_reviewer
+    access: read_only
+    workspace: current
+
+  - domain: google-cloud
+    executor: antigravity
+    modelClass: provider_specialist
+    access: read_only
+    workspace: current
+
+fallback:
+  createNewChildSession: true
+  mayChangeParentModel: false
+  mayLoosenAccess: false
+  mayChangeContainment: false
+  mayExpandCredentials: false

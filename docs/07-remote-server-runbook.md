@@ -23,6 +23,31 @@ Coding work runs in disposable unprivileged workers. Pi, Claude Code, Codex CLI 
 
 Replace example usernames, paths, package pins and provider/model IDs before use. Commands marked **operator** require the administrative account. Commands marked **piops** run as the service user.
 
+> **Every command block below is reviewed content, not a script to run on sight.** An agent session presents the phase and its consequences and waits for explicit operator approval before executing any of it, per decision rather than per phase (ADR-036). Privileged commands are the operator's to run: a password is never typed into anything an agent can observe (R-005/R-006).
+
+## Current host — surveyed 5 August 2026
+
+The host exists and is reachable; this section records what is actually there, and where it diverges from the assumptions above. Divergence is recorded rather than quietly normalized — each one changes a phase.
+
+| Fact | Value |
+| --- | --- |
+| Address / access | `62.238.51.68`, key-based SSH, same username as the workstation |
+| OS / kernel | Ubuntu 26.04 LTS, `7.0.0-28-generic`, x86_64 |
+| Resources | 4 vCPU, 7.6 GiB RAM, 75 GB disk (70 GB free) |
+| Account | `sntx` (uid 1000), member of `sudo` |
+| Present | `git 2.53.0`, `curl`, `python3`, `tmux`; `node v24.19.0` + `npm` under nvm |
+| Pi | **0.83.0**, at `~/.nvm/versions/node/v24.19.0/bin/pi` |
+| Pi state | `~/.pi/agent/` — `settings.json`, `auth.json` (credentials, never read or copied), `models-store.json` |
+| Providers configured | `openai-codex` (7 models, ChatGPT subscription) and `openrouter` (274 models). Nothing else |
+| Preflight gaps | `rg`, `jq`, `sqlite3`, `podman` absent — `scripts/server-preflight.sh` exits 1 |
+
+Divergences from the assumptions, and what each one blocks:
+
+1. **One account, not two.** The runbook assumes a dedicated unprivileged `piops` plus a separate sudo-capable operator. The host has a single sudo-capable account used for both. Phase 0's privilege split is therefore unsatisfied: either create the service user before Phase 1, or record an explicit, time-boxed acceptance of single-account operation for the early phases. It must not be left undecided — the isolated profile's guarantees assume the split.
+2. **Ubuntu 26.04, not 24.04.** Package availability and pins need re-checking against this release rather than inherited from the runbook.
+3. **Node and Pi live under nvm.** They are absent from non-interactive `PATH`, so `ssh host 'pi …'`, `systemd` units and any automation see nothing. Every unit and script must use absolute interpreter paths or source nvm explicitly. This will present as "command not found" in exactly the contexts that are hardest to debug.
+4. **No container runtime.** Without rootless Podman there is no isolated execution boundary, so Phase 5 (isolated server-worker profile) and the `isolated-local` profile cannot be built, and V0.1-T1's acceptance cannot pass. Installing it is the first mutating action on this host and needs operator approval.
+
 ## Phase 0 — Provision and lock down the host
 
 ### Operator commands
