@@ -1,0 +1,8 @@
+{
+  // What to lint and what to skip. Rule configuration lives in .markdownlint.jsonc.
+  // Run with: npx --yes markdownlint-cli2
+  "globs": ["**/*.md"],
+  // docs/archive/ is frozen imported material, kept verbatim as historical
+  // reference and never edited — it must not be able to fail our checks.
+  "ignores": ["docs/archive/**", "node_modules/**", ".git/**"]
+}
