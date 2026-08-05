@@ -1,5 +1,21 @@
 # Bundle Changelog
 
+## 6 August 2026 (V0.0 tagged; V0.1-T4 pin inspection)
+
+- Closed and tagged `v0.0`: the closeout branch merged through `develop` to `main`, both gates clean.
+- Added `docs/reviews/2026-08-06-v0.1-t4-package-pin-inspection.md` and checked V0.1-T4. All three
+  pins accepted with conditions, read from published tarballs without installing or executing them.
+- Recorded the R-001 answer: the permission system has no filesystem watcher, so on-disk edits are
+  inert, but `/reload` (`resources_discover`) and the `/permission-system` config modal both mutate
+  policy mid-session — the modal including `yoloMode`, which auto-approves every ask-state check.
+  Parse-once cannot come from upstream; a launcher guard or pinned patch is required.
+- Recorded that `pi-interactive-shell` has no secret-awareness of any kind and no permission-system
+  integration: `sudo` is safe only because `sudo` disables echo, and the `interactive_shell` tool's
+  free-form `command` receives neither the `bash` token gates nor automatic path extraction.
+- Recorded the `UserQuestionV1` gap: upstream is a synchronous 1–4 question batch with no
+  `sensitivity`, `status` or deadline concept, so an adapter is required and owns the rule that a
+  `credential` question is never routed through a questionnaire that echoes typed text.
+
 ## 5 August 2026 (archive import and pruning)
 
 - Imported the predecessor material as `docs/archive/`: frozen, non-authoritative provenance, excluded from lint and the JSON check so it can never fail current gates. Nested git history in the vendored SSSF clone was removed and its files are tracked as plain content.
