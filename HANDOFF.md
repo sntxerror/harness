@@ -1,6 +1,6 @@
 # Handoff — start here
 
-Updated: 5 August 2026. Replace this file's contents at the end of each working session; it describes current state only, not history (history is `CHANGELOG.md` and git).
+Updated: 6 August 2026. Replace this file's contents at the end of each working session; it describes current state only, not history (history is `CHANGELOG.md` and git).
 
 ## The rule that governs how you work here
 
@@ -8,9 +8,9 @@ Updated: 5 August 2026. Replace this file's contents at the end of each working 
 
 ## Where the project stands
 
-**V0.0 (canonical repo & tracking) is complete** — all six tasks checked. **V0.1 (baseline interactive harness) is the current version**, partially started on the server.
+**V0.0 is closed and tagged.** The closeout branch merged through `develop` to `main`; `v0.0` is tagged and `main`, `develop` and the tag are pushed. Both gates were clean before and after.
 
-Branch `feature/v0.0-closeout-and-cache-discipline` holds the V0.0 closeout, the cache-discipline spec and the governance decision. Not merged. Tagging `v0.0` is approved and pending the merge.
+**V0.1 (baseline interactive harness) is the current version.** T4 is done; T1 and T2 are partially done on the server. Branch `feature/V0.1-T4-package-pin-inspection` holds the T4 review and is **committed locally but not pushed and not merged** — V0.1 has open boxes, so nothing merges yet.
 
 ## Remote server — actual state right now
 
@@ -57,31 +57,21 @@ bash scripts/validate-bundle.sh                                    # expect exit
 npx --yes markdownlint-cli2                                        # expect 0 issues
 ```
 
-Then close V0.0 (tagging is approved):
-
-```bash
-git checkout develop && git merge --no-ff feature/v0.0-closeout-and-cache-discipline
-git checkout main && git merge --no-ff develop
-git tag -a v0.0 -m "V0.0 — canonical repo and tracking"
-git push origin main develop --tags
-git checkout develop
-```
-
 ## V0.1 — what remains
 
 `tasks/V0.1-baseline-harness.md`, plan stages 0–2.
 
 - **T1 (stage 0 layout)** — partially done on the server as recorded above; blocked on the package set and the remaining Phase 0 steps.
 - **T2 (pin upstream Pi)** — largely answered: 0.83.0 is installed and running. Still to record: install method and rollback metadata, and the provider/route decision above.
-- **T4 (verify three package pins)** — not started, needs web access. For each, produce inspection notes or a rejection plus a named alternative:
+- **T4 (verify three package pins)** — **done.** `docs/reviews/2026-08-06-v0.1-t4-package-pin-inspection.md`. All three pins accepted with conditions, read from published tarballs without installing or executing them; exact versions and tarball hashes are in §1 of the review.
 
-| Package | Gates | Must verify |
-| --- | --- | --- |
-| `@gotgenes/pi-permission-system` | T5 | **Blocker (R-001):** whether configuration can be re-read or hot-reloaded mid-session. Our invariant is parse-once at `session_start`, hashed into the manifest. If upstream cannot guarantee it, the fallback is a pinned patch or launcher guard that fails closed |
-| `pi-interactive-shell` | T6 | PTY behavior for sudo and secret entry — the password must be typed directly and never captured or echoed into transcript or logs (R-005/R-006). Also whether any path bypasses the permission alias |
-| `@juicesharp/rpiv-ask-user-question` | T6 | Question schema against `schemas/UserQuestionV1.schema.json`; whether an adapter is needed to map its payload into ours |
+What T4 settled, because T5 and T6 now depend on it:
 
-Also record per pin: release date and activity, license, whether install runs scripts (prefer `--ignore-scripts`), and the behaviors we depend on — installing a package is installing executable code (`docs/01`, extension trust rule).
+- **R-001 cannot be satisfied upstream.** The permission system has no filesystem watcher, so on-disk edits are inert mid-session — but `/reload` (`resources_discover`) and the `/permission-system` config modal are two explicit mutation paths, the modal including `yoloMode`, which auto-approves every ask-state check including subagent forwarding. A launcher guard is the cheaper fallback because the surface is two registrations rather than a watcher.
+- **`pi-interactive-shell` provides neither R-005/R-006 guarantee.** No secret-awareness of any kind; `sudo` is safe only because `sudo` suppresses echo. Keep `handoffSnapshotEnabled` off — it writes un-redacted terminal tails to `~/.pi/cache/interactive-shell/`. The `interactive_shell` tool's free-form `command` gets neither the `bash` token gates nor automatic path extraction, so it is currently gated only as an opaque whole-tool allow/ask.
+- **An adapter is required for `UserQuestionV1`.** Upstream is a synchronous 1–4 question batch with no `sensitivity`, `status` or deadline; the rule that a `credential` question never goes to a questionnaire that echoes typed text can only live in our adapter.
+
+**Five decisions are open and blocking (ADR-036, §5 of the review):** the R-001 fallback mechanism; whether `interactive_shell` is admitted before its command string is gated at command level; adapter placement and whether `description`/`preview` extend the schema; whether to accept `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` uninspected; and a pin-refresh policy given 24 majors in three months. The risk material these imply is **not yet in `docs/03`** — a review changes nothing, and the change discipline puts `02`/`03` before config.
 
 ## Environment notes
 
