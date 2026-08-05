@@ -1,5 +1,10 @@
 # Bundle Changelog
 
+## 5 August 2026 (archive import and pruning)
+
+- Imported the predecessor material as `docs/archive/`: frozen, non-authoritative provenance, excluded from lint and the JSON check so it can never fail current gates. Nested git history in the vendored SSSF clone was removed and its files are tracked as plain content.
+- Pruned what carried no reference value: `setup-draft/` (verified byte-identical to the initial commit except the already-migrated review and the archive banner), the raw GCP quota CSVs (the readable `gcp-audit.md` is kept), and SSSF's bundled visualizer app (its `SKILL.md`, cookbooks and references are kept — that is what `05` compares against). Archive 14M → 916K.
+
 ## 5 August 2026 (governance and host survey)
 
 - Added ADR-036: documented decisions are authority over content, not authorization to act. Agent sessions obtain explicit operator approval per architecture decision before implementing it; runbook command blocks are reviewed content, not scripts to run on sight. Reflected in `CLAUDE.md`, `docs/00` change discipline and the runbook header.

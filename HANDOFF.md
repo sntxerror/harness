@@ -45,6 +45,10 @@ Catalog facts for `gpt-5.6-luna` (from the host's own `models-store.json`): cont
 
 Open: whether to pin the direct `openai-codex` route or `openrouter`, which reaches the same models with a 1.05M context window. That choice also determines the API surface and which usage fields exist for cache verification — see `docs/10` §10.3. `config/session-manifest.example.yaml` keeps its placeholders; the resolved values belong in a profile-specific copy, with an **exact** ID and never an alias.
 
+## Archive
+
+`docs/archive/` holds frozen predecessor material — provenance only, never authority, never edited, excluded from lint and the JSON check. Pruned to 916K: `setup-draft/` was removed after verifying it byte-identical to the initial commit `2e87052` (recoverable with `git show 2e87052:<path>`; its review is already migrated to `docs/reviews/`), as were the raw GCP quota CSVs and SSSF's bundled visualizer app. If something in the archive still matters, restate it in an authoritative document rather than citing it.
+
 ## Verify the repository
 
 ```bash
