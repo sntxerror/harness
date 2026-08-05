@@ -288,6 +288,26 @@ The control plane (orchestrator, board, event/artifact stores, memory service, r
 
 **Rejected:** two independent setups synchronizing sessions; a file manager grown inside the mission UI; per-project fixed execution sites.
 
+### ADR-034 — Mid-session change uses append-only channels, never prefix edits
+
+**Status:** Accepted (August 2026); refines ADR-007
+
+Instructions and capabilities that change during a session enter through append-only channels: an operator instruction is appended as a `system`-role message in the tail, and a capability change is an additive load/unload against tools declared up front with deferred loading. The top-level system prompt and the ordered tool schema list are immutable for the epoch. Where the pinned model does not support a preserving channel, the harness keeps a fixed surface for the epoch or declares an explicit boundary — it never silently edits the prefix. Availability per model is recorded in the session manifest. Mechanism, placement rules and verification: `10-context-and-cache-discipline.md`.
+
+**Reason:** prefix edits were the only remaining sanctioned way to deliver mid-session context, and they invalidate the whole conversation cache. The append-only channels remove that trade-off; the `system`-role channel is additionally the non-spoofable operator path, unlike operator text embedded in user or tool content.
+
+**Rejected:** rebuilding the system prompt to inject context; swapping the tool list per mode; smuggling operator instructions into user-turn text when a privileged channel exists.
+
+### ADR-035 — Cache conformance is a verified gate, not a convention
+
+**Status:** Accepted (August 2026); implements ADR-007
+
+The normalized rendered prefix is hashed per breakpoint and compared against the epoch's recorded hash; an undeclared mismatch is a `CACHE_EPOCH_VIOLATION`, failing the request in the evaluation profile. Uncached, cache-read and cache-write tokens are recorded as separate event fields from the Executor onward, never as one total. A scripted smoke session asserts stable prefix hashes, non-zero cache reads after the first request and a startup token budget; drift fails CI. Savings are reported from traces only.
+
+**Reason:** a frozen prefix is an assertion until something checks it, and every observed invalidator (interpolated clocks, non-deterministic serialization, per-turn panels, forks rebuilding the prefix) fails silently — no error, only cost. Hashing identifies which component moved the bytes; usage counters alone only prove that something did.
+
+**Rejected:** trusting convention and review; a single combined token metric; estimating savings without traces.
+
 Workflow state is durable outside model context. A run must resume from manifests, envelopes, evidence and repository state even if every model session is discarded. Pi-native compaction remains local to each Pi child conversation.
 
 The first named workflows are `inspect`, `plan`, `implement`, `research`, `release` and `incident`. Known invocations are deterministic code phases using the authoritative `Executor`; they are never rediscovered by a tester agent. Phase execution success and run acceptance are separate recorded facts.

@@ -1,5 +1,14 @@
 # Bundle Changelog
 
+## 5 August 2026 (V0.0 closeout)
+
+- Closed V0.0: markdown lint clean; `validate-bundle.sh` repaired (dropped the hard `rg` dependency, prunes `.git`, now asserts docs 00–10, all five schemas and a task file per roadmap version); placeholder resolution checklist recorded per template.
+- Added `10-context-and-cache-discipline.md`: request zones, breakpoint placement, append-only mutation channels, silent-invalidator audit, cache economics and per-version obligations — the mechanism implementing ADR-007.
+- Added ADR-034 (append-only mid-session change; no prefix edits) and ADR-035 (cache conformance as a hash-verified CI gate).
+- Added R-082 (breakpoint lookback starvation), R-083 (fan-out cache stampede) and R-084 (unimplemented cache verification).
+- Tracked the new obligations as V0.3-T8/T9/T10 and V0.4-T9/T10.
+- Added `CLAUDE.md` (repository working conventions) and `HANDOFF.md` (current state and next actions).
+
 ## 5 August 2026 (evening revision)
 
 - Added `08-persona-mission-control.md`: personas as top-level profiles, missions, capability assignment pipeline, multi-scope memory, leases, statechart lifecycles and the observability event contract.

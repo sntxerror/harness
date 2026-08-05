@@ -19,6 +19,8 @@ This documentation set separates current implementation authority from history, 
 | `07-remote-server-runbook.md` | Authoritative operations guide | Gradual host provisioning, isolated workers, foreign harnesses, portable sessions and Hermes rollout |
 | `08-persona-mission-control.md` | Authoritative design supplement | Personas, missions, capability assignment pipeline, memory scopes, leases, lifecycle statecharts, observability event contract |
 | `09-topology-and-clients.md` | Authoritative design supplement | Control plane/runners/clients topology, placement policy, session transfer, viewing layers (forge/IDE/web UI), A2A interop stance |
+| `10-context-and-cache-discipline.md` | Authoritative mechanism | Request zones, breakpoint placement, append-only mutation channels, cache verification and the per-version obligations implementing ADR-007 |
+| `reviews/` | Point-in-time findings | Dated verification of a subsystem against the bundle and external experience; records findings, changes nothing |
 
 ## Reading order
 
@@ -27,8 +29,9 @@ This documentation set separates current implementation authority from history, 
 3. Check the risk register before promoting any stage.
 4. Read the closed-loop supplement before implementing workflow orchestration.
 5. Read the portability specification before building any cross-provider/foreign-session handoff.
-6. Use the remote-server runbook only after the corresponding local stage passes its acceptance tests.
-7. Consult the brainstorm only when traces show a missing capability or a decision needs reconsideration.
+6. Read the context and cache discipline before touching prompt assembly, tool registration, retrieval or history.
+7. Use the remote-server runbook only after the corresponding local stage passes its acceptance tests.
+8. Consult the brainstorm only when traces show a missing capability or a decision needs reconsideration.
 
 ## Change discipline
 
@@ -43,6 +46,7 @@ This documentation set separates current implementation authority from history, 
 
 - Upstream Pi is the main terminal execution harness and one frontend in a broader Agent OS.
 - Trusted and isolated profiles are physically separate; containment, permissions and cache-critical configuration are frozen for a session.
+- Mid-session change is append-only: operator instructions arrive as `system`-role messages and capabilities as additive tool loads; the prefix is never edited, and conformance is hash-verified rather than assumed (ADR-034/035, `10`).
 - `@gotgenes/pi-permission-system` provides broad allow/ask-on-risk intent approval. `pi-interactive-shell` provides trusted human PTY and sudo password entry.
 - CodeGraph is the only code relationship graph. Native Pi Lens is the only Pi LSP/diagnostics integration, with context injection, formatting and autofix disabled initially; its MCP mirror is not connected back into Pi.
 - Project documentation and decisions remain in one explicit RAG. Hermes is later procedural/episodic memory, not a replacement for RAG or Pi compaction.
