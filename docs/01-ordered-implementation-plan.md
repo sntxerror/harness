@@ -14,7 +14,7 @@ Build a powerful but controlled Pi installation in layers. Each responsibility h
 | Intent approval | `@gotgenes/pi-permission-system` |
 | Interactive PTY and sudo password entry | `pi-interactive-shell`, trusted-local main session only |
 | Real containment | exactly one Gondolin/container/OpenShell boundary per profile |
-| Structured user questions | `@juicesharp/rpiv-ask-user-question` |
+| Structured user questions | Our native `ask_user_question` on Pi's dialog primitives (ADR-049) |
 | Current-task state | Pi conversation/plan by default; optional parent-only `@juicesharp/rpiv-todo` for long missions |
 | Code architecture and impact | CodeGraph |
 | Exact language semantics and edit diagnostics | Native Pi Lens in conservative mode; no self-MCP mirror or second LSP |
@@ -383,12 +383,9 @@ Sources: [permission-system package](https://www.npmjs.com/package/@gotgenes/pi-
 
 ### 2.4 Install structured user questions; defer todo
 
-```bash
-PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:@juicesharp/rpiv-ask-user-question
-```
+There is nothing to install: `ask_user_question` is ours (ADR-049), a Pi-native tool of roughly 470 lines built on `ctx.ui.select()` and `ctx.ui.input()`, loaded from the profile's extension directory like any other local extension. Its input schema is declared with typebox at the version Pi itself resolves, and the `credential` refusal lives at its dispatch point rather than in a wrapper.
 
-Restart Pi and test one single-choice and one multiple-choice question from the main session. Later, test the same flow from a direct subagent before depending on child-to-user questioning.
+Test one single-choice and one multiple-choice question from the main session, and one `credential`-class question that must be refused rather than rendered. Later, test the same flow from a direct subagent before depending on child-to-user questioning.
 
 Keep these concepts separate:
 
@@ -399,9 +396,9 @@ Keep these concepts separate:
 
 If tasks repeatedly cross compaction, involve four or more independently verifiable steps, or require durable dependency tracking, trial `@juicesharp/rpiv-todo` in the trusted parent only. Configure one short guideline, do not auto-inject the changing todo list every turn, and do not give children separate todo stores. The parent remains the sole task-state owner.
 
-The RPIV packages are actively maintained but young and single-maintainer. Smoke-test their loading after every upgrade because the monorepo has previously had dependency-layout issues.
+`@juicesharp/rpiv-todo` remains the only RPIV package still in scope, and only as the D18 trial. It is actively maintained but young and single-maintainer; smoke-test its loading after every upgrade, because the monorepo has previously had dependency-layout issues. The question tool from the same monorepo was read in full and replaced by our own for enforcement reasons, not trust reasons (ADR-049).
 
-Sources: [RPIV monorepo](https://github.com/juicesharp/rpiv-mono), [todo](https://github.com/juicesharp/rpiv-todo), [question tool](https://pi.dev/packages/%40juicesharp/rpiv-ask-user-question).
+Sources: [RPIV monorepo](https://github.com/juicesharp/rpiv-mono), [todo](https://github.com/juicesharp/rpiv-todo).
 
 **Exit condition:** ordinary commands run without prompts, every tested risky family asks once, `sudo` accepts a password only through the PTY, dangerous actions are still contained by the selected profile, and questions are structured without becoming permission prompts.
 
@@ -434,9 +431,9 @@ Install only host-safe UI/policy packages in the isolated profile—no interacti
 ```bash
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/isolated" \
   pi install npm:@gotgenes/pi-permission-system@24.0.0
-PI_CODING_AGENT_DIR="$HOME/.pi/profiles/isolated" \
-  pi install npm:@juicesharp/rpiv-ask-user-question
 ```
+
+Our `ask_user_question` is a local extension rather than an installed package, so it is copied into the isolated profile's extension directory rather than installed into it — and copied deliberately, since profile separation means the two roots do not share extensions.
 
 Copy the reviewed intent policy, but let the custom guest/host path mapper translate `/workspace` before `external_directory` checks. Verify extension load order: permission hooks must see the original tool call, and Gondolin must remain the sole implementation of all seven built-ins.
 
@@ -1917,10 +1914,11 @@ npm install -g @colbymchenry/codegraph
 
 pi install npm:@gotgenes/pi-permission-system@24.0.0
 pi install npm:pi-interactive-shell@0.14.0
-pi install npm:@juicesharp/rpiv-ask-user-question
 pi install npm:@vndv/pi-codegraph
 pi install npm:pi-lens@3.8.74
 ```
+
+`ask_user_question` is absent from this list on purpose: it is ours (ADR-049) and is loaded from the profile's extension directory, not installed from npm.
 
 These commands target `trusted-local`; prepend its `PI_CODING_AGENT_DIR` in real launch/install scripts. Build the `isolated-local` directory from the reviewed official Gondolin example separately and do not copy host-only LSP/PTY/edit extensions into it.
 

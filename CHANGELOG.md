@@ -1,5 +1,21 @@
 # Bundle Changelog
 
+## 7 August 2026 (native structured questions)
+
+- Added ADR-049: `ask_user_question` is implemented natively, ~470 lines on Pi's `ui.select()` and
+  `ui.input()`, replacing `@juicesharp/rpiv-ask-user-question`. Not a rejection on trust — all three
+  RPIV tarballs were read (nothing installed or executed) and all three are clean; `rpiv-i18n` is a
+  soft optional peer that never needed accepting. Replaced because T4 established the `credential`
+  refusal can only live in our code, so an adapter was required either way and cost more than the
+  implementation. Upstream's own 166-line `rpc-fallback.ts` proves the budget.
+- Typebox is retained and pinned to Pi's resolved version (1.1.38): Pi depends on it directly and
+  every built-in declares parameters with `Type.Object` + `Static<typeof schema>`.
+- Closes D3 by dissolving it (no adapter exists) and D4 by inspection. **No V0.1 decisions remain
+  open.** Added R-109 (we now track Pi's dialog primitives ourselves) and R-110 (a typebox version
+  split would change the tool schema, and the prefix hash, silently).
+- Accepted losses recorded rather than disputed: no preview pane, no tabbed multi-question review,
+  multi-select by comma-separated indices.
+
 ## 7 August 2026 (provider pin, evaluation policy, retrieval deferral, V0.1-T1)
 
 - Added ADR-046: the parent runs the direct `openai-codex` OAuth route pinned to `gpt-5.6-luna`

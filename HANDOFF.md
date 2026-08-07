@@ -18,7 +18,7 @@ Three documents carry it: `docs/11` (the layer line, the parity matrix, the meas
 
 **V0.4 is not "the switch point".** It is where self-hosting starts. The switch is a measured gate at V0.6 — a capability matrix plus a ten-day dual run against VS Code and Claude Code, declared per workload class and reversible (ADR-041). That gate **stays**: it evaluates our tooling against the tool it replaces, which is the one kind of comparison this project still runs (ADR-047).
 
-## Four decisions were settled on 7 August 2026
+## Five decisions were settled on 7 August 2026
 
 **ADR-046 — the parent runs `openai-codex/gpt-5.6-luna`, thinking `medium`.** The direct ChatGPT OAuth route, pinned to an exact ID. It was chosen *against* price and context window: OpenRouter reaches the same model at half the price with 1.05M context against 272k. The deciding fact is that all six `openai-codex` models declare `compat.supportsToolSearch` and `supportsOpenAIGrammarTools`, and none of OpenRouter's 273 declares either — tool search is Pi's deferred-tool-loading mechanism, so the cheaper route would permanently fix the parent's tool surface for each epoch. OpenRouter stays authenticated for scouting queries only, at the exact dated ID `deepseek/deepseek-v4-flash-0731` (never the `~…-latest` alias, never the rolling `deepseek/deepseek-v4-flash` pointer).
 
@@ -29,6 +29,10 @@ The parent runs the *cheap* tier deliberately. The case for a strong parent — 
 **ADR-047 — we evaluate our tooling, never models.** No benchmarking, ranking or comparative evaluation of language models. Pins are chosen once against a stated property and revised when that property changes. This removed the D2 settling test and the continuity benchmark that gated a separate compaction model — so there is no separate compaction model; compaction runs on the parent's pinned model. What stays measured: the cache regression gate, prefix and token budgets, the V0.6 parity gate, and tool-integration A/Bs where two components would otherwise do one job.
 
 **ADR-048 — no RAG in the coding harness.** No local index, no local embedding model, no `knowledge_search`/`knowledge_get`. Project knowledge becomes a remote-tier service at V0.7. Until then the harness reads `docs/` directly, which a ~5,500-line corpus inside the working repository makes correct. V0.2-T4 was **removed, not deferred in place**; plan Stage 4 is now scheduled at V0.7. The reopening trigger is stated in advance (R-107): a routine question needing more than three file reads, or `docs/` passing ~15,000 lines.
+
+**ADR-049 — `ask_user_question` is ours.** Roughly 470 native lines on Pi's `ctx.ui.select()` and `ctx.ui.input()`, replacing `@juicesharp/rpiv-ask-user-question`. All three RPIV tarballs were read first (nothing installed, nothing executed) and all three are clean — no install scripts, no `bin`, no network, no `eval`; `rpiv-config` is two source files, and `rpiv-i18n` is a soft optional peer that degrades to identity strings when absent, so it never needed accepting. **The package was not rejected on trust or dependency grounds and the record must not be read that way.** It is replaced because T4 established that a `credential`-class question can only be refused in our code, so an adapter was required either way — and an adapter around 4,960 lines we do not control is more to own than an implementation of 470 that already contains the rule. Upstream's own `rpc-fallback.ts` (166 lines on the same primitives) is the proof the budget is real.
+
+Typebox stays: Pi depends on it directly (1.1.38) and every Pi built-in declares parameters with `Type.Object` + `Static<typeof schema>`. Ours is pinned to whatever Pi resolves, because two typebox versions feeding one validator change the tool schema — and therefore the prefix hash — with no error (R-110). We also now track Pi's dialog primitives ourselves (R-109). Settles D3 by dissolving it and D4 by inspection. **The tool is built at V0.1-T6**, not yet written.
 
 ## Where the project stands
 
@@ -71,8 +75,8 @@ Host `62.238.51.68`, Ubuntu 26.04, key-based SSH as `sntx`; full survey in `docs
 
 - **T2 (pin upstream Pi)** — next. An upgrade decision 0.80.10 → 0.84.x with rollback metadata, **plus** the ADR-046 re-read described above.
 - **T3 (install Pi into the profile roots)** — depends on T2.
-- **T5–T8** — permission system, PTY, structured questions, privileged-command channel.
-- **D3** (`UserQuestionV1` adapter placement) and **D4** (whether `@juicesharp/rpiv-config` and `rpiv-i18n` are accepted uninspected) are still open. D4 is two tarball reads on the V0.1-T4 terms and is cheaper to settle than to decide — it was not reached this session.
+- **T5–T8** — permission system, PTY, our `ask_user_question` (ADR-049), privileged-command channel.
+- **No V0.1 decisions remain open.** D1, D2, D3 and D4 all closed on 7 August 2026.
 
 ## Still-open defects
 

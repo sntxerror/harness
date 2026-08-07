@@ -530,6 +530,26 @@ This costs the execution layer one capability, and the cost is smaller than it l
 
 **Rejected:** any local embedding model or vector store; `qmd`, LanceDB or Chroma as a V0.2 component; an FTS5-only local index as a stepping stone, which would still be an index to build, own and invalidate; treating `docs/11`'s "one local RAG" row as still current.
 
+### ADR-049 — We own the structured-question surface natively
+
+**Status:** Accepted (7 August 2026); replaces `@juicesharp/rpiv-ask-user-question` as owner; closes D3 and D4
+
+`ask_user_question` is implemented by us, as a Pi-native tool of roughly 470 lines, against Pi's own `ui.select()` and `ui.input()` dialog primitives. `@juicesharp/rpiv-ask-user-question` is not installed, and neither are its dependencies `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n`.
+
+**This is not a rejection of the package on trust or dependency grounds, and it matters that the record says so.** All three tarballs were read on the V0.1-T4 terms. There are no install scripts, no `bin` entries, no network calls and no `eval`; `rpiv-config` is two source files that write JSON under `~/.config/` at mode `0600`; `rpiv-i18n` is a *soft optional peer* loaded by dynamic import whose absence degrades `t()` to an identity function, so it need never be installed at all. The only `child_process` in the set spawns `$EDITOR` over a temporary file. The pin was safe to accept.
+
+It is replaced because of **where the enforcement point has to be**. V0.1-T4 established that an adapter is required regardless: upstream has no concept of `sensitivity`, so the rule that a `credential`-class question never reaches a surface that echoes typed text can only live in our code. That leaves a choice between an adapter wrapping 4,960 lines we do not control in order to enforce a rule that component knows nothing about, and an implementation of about 470 lines where the rule sits at the dispatch point. The second is smaller in total, has one owner instead of two, and removes the adapter question entirely rather than answering it.
+
+The implementation is feasible in that space because upstream demonstrated it: `rpc-fallback.ts` is 166 lines that walk the same questions through `ui.select()`/`ui.input()` and return the identical result shapes, written for RPC hosts where `ui.custom()` renders nothing. The tool's input schema is declared with **typebox**, which is not an added dependency — Pi depends on it directly (1.1.38 as resolved on 7 August 2026) and every Pi built-in declares its parameters the same way, with `Type.Object` and `Static<typeof schema>`. Our copy is pinned to the version Pi resolves, because two typebox versions building schema objects for one validator is a silent path to a changed schema and therefore a changed prefix hash.
+
+Schema `description` strings are written tight. Upstream's are long because they were authored for Claude Code parity; ours are tool-schema bytes in the frozen prefix on every request (ADR-035), and the same instruction fits in a quarter of the space.
+
+**What is deliberately lost:** the side-by-side preview pane, tabbed multi-question review, and checkbox multi-select, which becomes comma-separated indices. These are real affordances and the loss is accepted, not disputed — they are worth less here than a single owner for the credential rule, because our questions are gate-shaped rather than design-shaped. `description` and `preview` on options remain absent from `UserQuestionV1` and are not authored.
+
+**Reason:** an adapter that exists only to enforce a rule the wrapped component cannot express is a wrapper around the wrong boundary. Owning ~470 lines that already had to contain the rule is less code than owning the rule plus a dependency on 4,960 lines that can move under it.
+
+**Rejected:** installing the upstream package with an adapter in `pi-session-control` or in its own package (D3's two options, both moot); forking upstream, which inherits the TUI's maintenance without inheriting its author; hand-writing JSON Schema instead of typebox, which loses `Static<>` type derivation and diverges from every Pi built-in; relaxing `UserQuestionV1` to match upstream's batch shape.
+
 ## Superseded directions
 
 | Earlier direction | Why it changed | Current decision |
@@ -558,3 +578,4 @@ This costs the execution layer one capability, and the cost is smaller than it l
 | Buy a stronger parent because its errors are ungated | Correct diagnosis, wrong remedy — quality-bearing phases route to profiled workers where a gate does check them, and caching suppresses only the parent's input | Parent on the cheap-fast tier; quality bought per phase (ADR-046) |
 | Choose the parent model by running a task against each | Model evaluation ages within weeks and gates a version on work nobody intends to do | Pin with a stated reason; evaluate our tooling only (ADR-047) |
 | One local RAG in the execution layer | Three components with a staleness and duplicate-index failure mode, bought to query documents the agent can already open | No RAG, no embedding model locally; project knowledge is a remote-tier service at V0.7 (ADR-048) |
+| `@juicesharp/rpiv-ask-user-question` owns structured questions | The package is safe, but the `credential` rule can only live in our code — so an adapter was required either way, and the adapter plus dependency exceeded the implementation | ~470 native lines on Pi's `ui.select()`/`ui.input()`, one owner, rule at the dispatch point (ADR-049) |

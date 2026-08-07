@@ -12,8 +12,8 @@ Deadline column: the version whose work cannot start or cannot be accepted witho
 | --- | --- | --- | --- |
 | D1 | Provider route for the parent model | V0.1 | **Decided — ADR-046** |
 | D2 | Parent model class: cheap-fast or strong | V0.1 | **Decided — ADR-046** |
-| D3 | `UserQuestionV1` adapter placement and schema extent | V0.1 | Yes |
-| D4 | Uninspected acceptance of `@juicesharp/rpiv-config` / `rpiv-i18n` | V0.1 | Yes |
+| D3 | `UserQuestionV1` adapter placement and schema extent | V0.1 | **Dissolved — ADR-049**: no adapter exists |
+| D4 | Uninspected acceptance of `@juicesharp/rpiv-config` / `rpiv-i18n` | V0.1 | **Settled by inspection**: both clean; neither installed |
 | D5 | CodeGraph's actual integration surface | V0.2 | **Decided — ADR-045**; residual choice of Pi-native surface is measured at V0.2 |
 | D6 | RAG engine | ~~V0.2~~ V0.7 | **Decided — ADR-048**: none locally; a remote-tier service |
 | D7 | Editing-safety owner (hashline) | V0.2 | No — trial |
@@ -52,25 +52,25 @@ The economics in the original entry also overstate the case: caching suppresses 
 
 **Settled by judgement, not measurement.** The comparison this entry proposed — running the V0.4 bootstrap task per parent class — is exactly the model evaluation ADR-047 removes from the project.
 
-### D3 — `UserQuestionV1` adapter placement and extent
+### D3 — `UserQuestionV1` adapter placement and extent — **DISSOLVED, ADR-049**
 
-**Undecided:** where the adapter between our `UserQuestionV1` contract and `@juicesharp/rpiv-ask-user-question` lives, and whether `description` and `preview` extend the schema.
+**Was undecided:** where the adapter between our `UserQuestionV1` contract and `@juicesharp/rpiv-ask-user-question` lives, and whether `description` and `preview` extend the schema.
 
-**Found (V0.1-T4 review):** upstream is a synchronous batch of 1–4 questions with no `sensitivity`, no `status` and no deadline. The rule that a `credential`-class question must never reach a questionnaire that echoes typed text can only be enforced in our adapter, since upstream has no concept of it.
+**The question no longer has a subject.** ADR-049 implements `ask_user_question` natively, so there is no adapter to place — the `credential` refusal sits at the tool's own dispatch point, and `UserQuestionV1` is what the tool emits rather than what a translation layer produces. Both placements the entry costed (`pi-session-control` versus its own package) are moot.
 
-**Costs:** placing the adapter in `pi-session-control` couples question policy to session compilation but gives it the frozen manifest; placing it in its own package keeps it reusable by the broker and the future IM gateway, which will need the identical relay. Extending the schema adds fields the current upstream cannot render.
+`description` and `preview` stay out of the schema and are not authored, which was the second half of the question. The broker's question relay (V0.5) and the gateway's (V0.9) consume `UserQuestionV1` directly, as they would have consumed the adapter's output.
 
-**Settles it:** decide the second consumer first. If the broker's question relay (V0.5) and the gateway's (V0.9) use the same contract, the adapter is its own package.
+### D4 — Uninspected RPIV dependencies — **SETTLED by inspection, 7 August 2026**
 
-### D4 — Uninspected RPIV dependencies
+**Was undecided:** whether `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` are accepted without inspection.
 
-**Undecided:** whether `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` are accepted without inspection.
+**Read, on the V0.1-T4 terms — downloaded and extracted, nothing installed, nothing executed.** Both are clean, and the entry's framing was slightly wrong about what was at stake:
 
-**Found:** `@juicesharp/rpiv-ask-user-question` is at 2.4.0. The RPIV monorepo is actively maintained, young, single-maintainer, and has previously had dependency-layout problems. The extension-trust rule is unambiguous: a Pi package executes with the privileges of the Pi process, so accepting a transitive dependency uninspected is accepting executable code uninspected.
+- **`@juicesharp/rpiv-config` 2.4.0** — 21K, **two source files**. Depends only on typebox. Writes JSON under `~/.config/<name>/` with a best-effort `chmod 0600`, reads env vars, and is imported by exactly one file of the parent package.
+- **`@juicesharp/rpiv-i18n` 2.4.0** — 47K, and **a soft optional peer**: it is reached by dynamic import, and when absent `t()` degrades to an identity function returning the English fallback. It never had to be accepted, because it never had to be installed.
+- Across all three packages: no install scripts, no `bin`, no network calls, no `eval`/`new Function`. The only `child_process` spawns `$EDITOR` over a temporary file — the answer-text-to-disk path the T4 review left untraced, now traced.
 
-**Costs:** inspection is two tarball reads on the same terms as the V0.1-T4 review. Acceptance without inspection saves an hour and is the only entry in the current stack that would breach the stated trust rule.
-
-**Settles it:** read the two tarballs. This is cheaper than deciding.
+**The pin was safe to accept.** It is nonetheless replaced by ADR-049, for the enforcement-boundary reason recorded there and explicitly not for trust or dependency weight. The distinction matters: a future reader must not cite D4 as evidence that RPIV packages are unsafe.
 
 ## B. Decisions blocking code intelligence and validation
 

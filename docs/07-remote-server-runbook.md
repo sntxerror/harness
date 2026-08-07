@@ -155,10 +155,9 @@ PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
 
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
   pi install npm:pi-interactive-shell@0.14.0
-
-PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:@juicesharp/rpiv-ask-user-question
 ```
+
+`ask_user_question` is not installed here — it is ours (ADR-049) and is copied into the profile's extension directory with the rest of the reviewed templates below.
 
 Copy the reviewed templates from this bundle:
 

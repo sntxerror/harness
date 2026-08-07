@@ -60,7 +60,7 @@ Parity is assessed against the actual daily environment — Claude Code driven f
 | Read, write, edit, glob, grep, ls | Pi built-ins (one owner per tool) | V0.1 |
 | Bash with per-command approval | permission-system intent gate | V0.1 |
 | Privileged commands and password entry | `interactive_shell` interactive mode (ADR-037) | V0.1 |
-| Structured questions to the user | `ask_user_question` + `UserQuestionV1` adapter | V0.1 |
+| Structured questions to the user | Our native `ask_user_question` on Pi's dialog primitives (ADR-049) | V0.1 |
 | Session resume and automatic compaction | Pi native compaction (ADR-012) | V0.1 |
 | Semantic navigation, diagnostics, rename | Pi Lens conservative mode | V0.2 |
 | Architecture, callers, blast radius | CodeGraph | V0.2 |
