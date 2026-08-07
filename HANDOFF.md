@@ -1,6 +1,6 @@
 # Handoff — start here
 
-Updated: 6 August 2026. Replace this file's contents at the end of each working session; it describes current state only, not history (history is `CHANGELOG.md` and git).
+Updated: 7 August 2026. Replace this file's contents at the end of each working session; it describes current state only, not history (history is `CHANGELOG.md` and git).
 
 ## The rule that governs how you work here
 
@@ -68,10 +68,22 @@ npx --yes markdownlint-cli2                                        # expect 0 is
 What T4 settled, because T5 and T6 now depend on it:
 
 - **R-001 cannot be satisfied upstream.** The permission system has no filesystem watcher, so on-disk edits are inert mid-session — but `/reload` (`resources_discover`) and the `/permission-system` config modal are two explicit mutation paths, the modal including `yoloMode`, which auto-approves every ask-state check including subagent forwarding. A launcher guard is the cheaper fallback because the surface is two registrations rather than a watcher.
-- **`pi-interactive-shell` provides neither R-005/R-006 guarantee.** No secret-awareness of any kind; `sudo` is safe only because `sudo` suppresses echo. Keep `handoffSnapshotEnabled` off — it writes un-redacted terminal tails to `~/.pi/cache/interactive-shell/`. The `interactive_shell` tool's free-form `command` gets neither the `bash` token gates nor automatic path extraction, so it is currently gated only as an opaque whole-tool allow/ask.
+- **`pi-interactive-shell` has no secret-awareness of any kind.** `sudo` is safe only because `sudo` suppresses echo. Keep `handoffSnapshotEnabled` off — it writes un-redacted terminal tails to `~/.pi/cache/interactive-shell/` (R-089).
 - **An adapter is required for `UserQuestionV1`.** Upstream is a synchronous 1–4 question batch with no `sensitivity`, `status` or deadline; the rule that a `credential` question never goes to a questionnaire that echoes typed text can only live in our adapter.
 
-**Five decisions are open and blocking (ADR-036, §5 of the review):** the R-001 fallback mechanism; whether `interactive_shell` is admitted before its command string is gated at command level; adapter placement and whether `description`/`preview` extend the schema; whether to accept `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` uninspected; and a pin-refresh policy given 24 majors in three months. The risk material these imply is **not yet in `docs/03`** — a review changes nothing, and the change discipline puts `02`/`03` before config.
+## The privileged-command channel (ADR-037/038, decided 7 August)
+
+`interactive` is one of four modes and the only **blocking** one — `hands-free`, `dispatch` and `monitor` all return a `sessionId` immediately and let the model inject keystrokes and poll output. In interactive mode the model's turn is suspended for the session's life and the focused overlay writes straight to the PTY, so privileged commands run there and nowhere else. Headless sessions have no privileged channel at all: the tool requires a TUI and errors without one.
+
+The T4 review's §3.2 claim that `interactive_shell` escapes command-level gating was **wrong and is corrected in place.** The permission system's `shellTools` config maps the tool's `command` onto the full bash enforcement stack, and `docs/01` §2.1 already carried the exact entry. Gating is configuration; the only code we own is the mode rule and sticky per-session classification — needed because a call carrying only `sessionId` and `input` presents an *empty* command to the gate and matches `"*": "allow"` (R-091), and because Ctrl+B leaves a session addressable after the blocking call returns (R-087).
+
+Sudo stays for Phase 0, confined to that channel, and is revoked as a **V0.1 exit condition** (ADR-038, R-090). `piops` never receives it. This is intent control, not containment — the container boundary is still the security boundary (R-008).
+
+New work: **V0.1-T8** builds the channel; T7's battery gains its four probes.
+
+**Three decisions remain open (ADR-036):** adapter placement for `UserQuestionV1` and whether `description`/`preview` extend the schema; whether `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` are accepted uninspected; and a pin-refresh policy given 24 majors in three months. **Also unresolved:** `docs/01` §2.1 still pins `@gotgenes/pi-permission-system@20.9.1` and `pi-interactive-shell@0.13.0` while T4 verified 24.0.0 and 0.14.0 — reconciling that is a pin decision (R-050), not an edit, and it is deliberately left alone.
+
+Two pre-existing defects in `docs/02` are flagged but untouched: ADR-028 and ADR-029 each appear twice (lines 245/253 and 337/353), and the prose following ADR-036 belongs to a factory/workflow ADR rather than to ADR-036. Renumbering would break cross-references.
 
 ## Environment notes
 
