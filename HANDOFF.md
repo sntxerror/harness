@@ -31,7 +31,13 @@ Not done, and each needs its own approval before proceeding:
 - **`loginctl enable-linger piops`** for user services.
 - **sshd hardening** — `PasswordAuthentication no`, `PermitRootLogin no`, `AllowUsers`. This is the one change that can lock you out; validate with `sudo sshd -t` before reload and keep a session open.
 
-Pi itself: **0.83.0** at `~/.nvm/versions/node/v24.19.0/bin/pi`, under the `sntx` account. Nothing is installed for `piops` yet.
+Pi itself: **0.83.0** at `~/.nvm/versions/node/v24.19.0/bin/pi`, under the `sntx` account. Nothing is installed for `piops` yet. Upstream is **0.84.1** as of 7 August, so the host is one minor behind; under ADR-039 the refresh is expected, but it changes the machine and therefore needs approval before anyone runs it.
+
+## Pin policy (ADR-039, decided 7 August)
+
+Packages take their latest published version at install or refresh. A version in a document records what was resolved on a date — it is evidence, not a target, and a stale number is never a reason to install an older release. Every pin in `docs/` was re-resolved on 7 August 2026; the notable moves were permission-system 20.9.1 → **24.0.0**, interactive-shell 0.13.0 → **0.14.0**, subagents 18.1.0 → **19.2.1**, pi-sandbox 0.5.0 → **0.6.2**, pi-lens 3.8.71 → **3.8.74**. Six others were already latest.
+
+What stays exact is the *resolved* version and hash, recorded into the lockfile and manifest: the cache epoch and `SessionCompatibilityV1` are computed over package identity, so a version that changes underneath a live profile invalidates both silently. Refresh is a dated act that re-runs the smoke suite, not a background process, and for policy-carrying packages it re-reads the behaviours we depend on — a major can move them without breaking a signature (R-050, R-092).
 
 ## Model pin
 
@@ -81,7 +87,7 @@ Sudo stays for Phase 0, confined to that channel, and is revoked as a **V0.1 exi
 
 New work: **V0.1-T8** builds the channel; T7's battery gains its four probes.
 
-**Three decisions remain open (ADR-036):** adapter placement for `UserQuestionV1` and whether `description`/`preview` extend the schema; whether `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` are accepted uninspected; and a pin-refresh policy given 24 majors in three months. **Also unresolved:** `docs/01` §2.1 still pins `@gotgenes/pi-permission-system@20.9.1` and `pi-interactive-shell@0.13.0` while T4 verified 24.0.0 and 0.14.0 — reconciling that is a pin decision (R-050), not an edit, and it is deliberately left alone.
+**Two decisions remain open (ADR-036):** adapter placement for `UserQuestionV1` and whether `description`/`preview` extend the schema; and whether `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` are accepted uninspected. The pin question that stood here is settled by ADR-039 above.
 
 Two pre-existing defects in `docs/02` are flagged but untouched: ADR-028 and ADR-029 each appear twice (lines 245/253 and 337/353), and the prose following ADR-036 belongs to a factory/workflow ADR rather than to ADR-036. Renumbering would break cross-references.
 
