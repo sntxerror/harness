@@ -347,13 +347,17 @@ At a prompt, approve once for an exceptional action or approve the suggested bou
 
 Safe flow:
 
-1. Pi proposes one exact `sudo <command>` through `interactive_shell`.
-2. Permission-system asks once for that command.
+1. Pi proposes one exact `sudo <command>` through `interactive_shell` with `mode: "interactive"`.
+2. Permission-system asks once for that command, resolved on the `bash` surface through the `shellTools` alias above.
 3. After approval, the PTY displays the native password prompt.
 4. Type the password directly into the terminal; Pi sees command output, not a chat-provided password.
 5. Exit when the one command completes.
 
-Never use `sudo -S`, paste a password into chat, grant a persistent root shell, or approve `sudo sh`, `sudo bash`, `sudo -s` or `sudo -i`. Test the integration harmlessly with `sudo -k && sudo true` and confirm that both the policy prompt and PTY password prompt appear. In `isolated-local`, the host interactive shell is hidden: guest dependency installation belongs in the sandbox image, and Gondolin must never proxy guest `sudo` to the host.
+Step 1's mode is a requirement, not a description (ADR-037). `interactive` is the only blocking mode, so the model's turn is suspended for the session's life and the focused overlay writes keystrokes straight to the PTY; `hands-free`, `dispatch` and `monitor` all return a `sessionId` immediately and permit the model to inject keystrokes and poll output over the identical command. Because `mode` is model-supplied and the package ships no allowlist, a privileged command reaching any other mode is refused by us, and the refusal is one of the Stage 2 probes rather than an assumption.
+
+The alias covers commands, not keystrokes. A call carrying only `sessionId` and `input` presents an empty command to the gate and matches `"*": "allow"`, so privilege classification is sticky to the session for its whole lifetime and input injection into a privileged-origin session is refused in every state — `backgrounded` included, since Ctrl+B leaves a session addressable by id.
+
+Never use `sudo -S`, paste a password into chat, grant a persistent root shell, or approve `sudo sh`, `sudo bash`, `sudo -s` or `sudo -i`. Test the integration harmlessly with `sudo -k && sudo true` and confirm that both the policy prompt and PTY password prompt appear. A headless session has no privileged channel at all: the tool requires a TUI and errors without one, so a service-launched session cannot escalate by a weaker route. In `isolated-local`, the host interactive shell is hidden: guest dependency installation belongs in the sandbox image, and Gondolin must never proxy guest `sudo` to the host. The harness account's own sudo is time-boxed to Phase 0 and revoked as a V0.1 exit condition (ADR-038); `piops` never receives it.
 
 ### 2.3 Why not `pi-safe-shell` in the main profile
 

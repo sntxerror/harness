@@ -324,6 +324,34 @@ Reversible, non-privileged work that a decision already covers — reading state
 
 **Rejected:** treating a checked-out document as consent; batching several decisions behind one approval; inferring approval from an operator's earlier approval of a related step.
 
+### ADR-037 — Privileged commands have exactly one channel: the interactive PTY, gated on the bash surface
+
+**Status:** Accepted (August 2026); depends on the `pi-interactive-shell` and `@gotgenes/pi-permission-system` pins
+
+A command classified as privileged executes only through `interactive_shell` with `mode: "interactive"`. That mode is the only blocking one — `hands-free`, `dispatch` and `monitor` all return a `sessionId` immediately — so the model's turn is suspended for the session's whole life, and the focused overlay writes keystrokes straight to the PTY. The operator types the password into the real terminal, it never reaches the model, and because the capture buffer accumulates only the child's output stream it never reaches the transcript, the tool result or the handoff snapshot either.
+
+The classification decision is not ours to invent, and it is not ours to write code for either. The permission system's `shellTools` config maps a non-`bash` tool onto the bash enforcement stack by naming the argument that carries its command — `{"interactive_shell": {"commandArgument": "command", "workdirArgument": "cwd"}}`, exactly as `docs/01` §2.1 already specifies. Recording the alias routes the command through the same decomposition, wrapper flooring, path and `external_directory` token gates and `bash:` rules as native `bash` (`src/access-intent/tool-kind.ts`). The `bash` surface therefore stays the single owner of command intent, `interactive_shell` becomes a consumer of that decision rather than a second policy surface, and no interceptor is needed for this half.
+
+What the alias cannot cover is a call that carries no command. `resolveShellInvocation` reads the mapped argument and yields `""` when it is absent, so an `interactive_shell` call bearing only `sessionId` and `input` presents an *empty* command to the bash gate and matches the `"*": "allow"` rule. Keystroke injection into an already-running session is therefore invisible to command-level policy by construction. Classification must consequently be sticky to the session rather than evaluated per call: `input`, `inputKeys`, `inputHex` and `inputPaste` are refused for any session whose originating command was privileged, in every state that session can reach — `backgrounded` included, since backgrounding leaves it addressable by id and would otherwise hand a live root shell back to the model. This, and the mode rule above, are the only parts we implement.
+
+A headless context has no privileged channel at all. The tool requires a TUI and errors without one, so a non-interactive or service-launched session cannot escalate by any route rather than falling back to a weaker one.
+
+**Reason:** interactive mode supplies the R-005/R-006 property by construction, but supplies it only as an *availability*. `mode` is a model-supplied parameter, the package ships no mode allowlist and no permission integration of any kind, and its free-form `command` receives neither the `bash` token gates nor automatic path extraction — so without an explicit rule the same tool that makes safe password entry possible also offers `mode: "dispatch"` with keystroke injection and output polling over the identical command.
+
+**Rejected:** trusting the model-supplied `mode`; a second permission surface or rule syntax for `interactive_shell`; a custom interceptor calling `checkPermission` where the `shellTools` alias already does the work in config; `registerToolAccessExtractor` as the gate, which is documented as path-only and cannot see a command string; evaluating privilege once at spawn and letting the session outlive its classification; treating this channel as containment rather than as intent control.
+
+### ADR-038 — The harness account's sudo is time-boxed to Phase 0
+
+**Status:** Accepted (August 2026); revocation is a V0.1 exit condition
+
+The account running Pi keeps sudo through server bring-up, confined to the single channel in ADR-037, and loses it when Phase 0 completes. Revocation is an exit condition of V0.1, not an aspiration deferred to a later version. `piops` never receives sudo at any point — the isolated profile's guarantees depend on that, and nothing in this decision softens it.
+
+After revocation, privileged host work happens in an operator terminal outside the harness. Escalation inside a worker is permitted only within a Gondolin or container boundary, never on the host, and a worker that needs root gets a contained root rather than a path to the host's.
+
+**Reason:** permissions are UX and intent control; the container boundary is the security boundary. A guard that confines sudo to one channel is a usability affordance during a phase that genuinely needs frequent privileged steps — it is not a containment claim, and R-008 already records that a Pi-native extension process, PTY tools included, can execute on the host even when the built-in shell is contained. Keeping the affordance past the point of need silently converts a time-boxed convenience into a standing privilege, which is the same failure the existing `90-sntx-nopasswd` time-box was written to avoid.
+
+**Rejected:** permanent sudo for the harness account; granting `piops` sudo under any condition; treating the ADR-037 guard as a substitute for the containment boundary; leaving revocation as an untracked intention rather than a checked exit condition.
+
 Workflow state is durable outside model context. A run must resume from manifests, envelopes, evidence and repository state even if every model session is discarded. Pi-native compaction remains local to each Pi child conversation.
 
 The first named workflows are `inspect`, `plan`, `implement`, `research`, `release` and `incident`. Known invocations are deterministic code phases using the authoritative `Executor`; they are never rediscovered by a tester agent. Phase execution success and run acceptance are separate recorded facts.

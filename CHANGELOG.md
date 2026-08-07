@@ -1,5 +1,23 @@
 # Bundle Changelog
 
+## 7 August 2026 (privileged-command channel)
+
+- Added ADR-037: privileged commands have exactly one channel — `interactive_shell` in
+  `mode: "interactive"`, the only blocking mode, where the focused overlay writes keystrokes
+  straight to the PTY and the model's turn is suspended for the session's life.
+- Added ADR-038: the harness account's sudo is time-boxed to Phase 0 and revoked as a V0.1 exit
+  condition; `piops` never receives it. Permissions are intent control, containment is the boundary.
+- **Corrected the T4 review §3.2.** `interactive_shell` does *not* escape command-level gating: the
+  permission system's `shellTools` config maps its `command` onto the full bash enforcement stack,
+  and `docs/01` §2.1 already specified the entry. The gating half is configuration, not code.
+- Recorded what survives that correction: `mode` is model-supplied with no allowlist, and a call
+  carrying only `sessionId` and `input` presents an empty command that matches `"*": "allow"` — so
+  privilege classification must be sticky to the session, not evaluated per call.
+- Added R-085 (silent alias degradation), R-086 (mode not enforced), R-087 (backgrounded sessions
+  stay writable), R-088 (`yoloMode` reachable mid-session), R-089 (un-redacted handoff snapshots),
+  R-090 (time-boxed sudo never revoked) and R-091 (empty-command injection).
+- Added V0.1-T8 for the channel itself and extended T7's battery with its four probes.
+
 ## 6 August 2026 (V0.0 tagged; V0.1-T4 pin inspection)
 
 - Closed and tagged `v0.0`: the closeout branch merged through `develop` to `main`, both gates clean.
