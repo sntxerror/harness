@@ -10,12 +10,12 @@ Deadline column: the version whose work cannot start or cannot be accepted witho
 
 | ID | Decision | Deadline | Blocking? |
 | --- | --- | --- | --- |
-| D1 | Provider route for the parent model | V0.1 | Yes — the pin is part of the frozen prefix |
-| D2 | Parent model class: cheap-fast or strong | V0.1 | Yes |
+| D1 | Provider route for the parent model | V0.1 | **Decided — ADR-046** |
+| D2 | Parent model class: cheap-fast or strong | V0.1 | **Decided — ADR-046** |
 | D3 | `UserQuestionV1` adapter placement and schema extent | V0.1 | Yes |
 | D4 | Uninspected acceptance of `@juicesharp/rpiv-config` / `rpiv-i18n` | V0.1 | Yes |
 | D5 | CodeGraph's actual integration surface | V0.2 | **Decided — ADR-045**; residual choice of Pi-native surface is measured at V0.2 |
-| D6 | RAG engine | V0.2 | Yes |
+| D6 | RAG engine | ~~V0.2~~ V0.7 | **Decided — ADR-048**: none locally; a remote-tier service |
 | D7 | Editing-safety owner (hashline) | V0.2 | No — trial |
 | D8 | Deferred tool loading availability on the pinned model | V0.3 | Yes |
 | D9 | Shell-output compression: RTK, LeanCTX narrow, or neither | V0.4 | No |
@@ -32,25 +32,25 @@ Deadline column: the version whose work cannot start or cannot be accepted witho
 
 ## A. Decisions blocking the baseline harness
 
-### D1 — Provider route for the parent model
+### D1 — Provider route for the parent model — **DECIDED, ADR-046**
 
-**Undecided:** whether the parent Pi session reaches its model through the direct `openai-codex` provider or through `openrouter`.
+**Was undecided:** whether the parent Pi session reaches its model through the direct `openai-codex` provider or through `openrouter`.
 
-**Found:** both are authenticated on the host, along with `gemini`. The direct route was verified end to end (`pi --model openai-codex/gpt-5.6-luna:medium`). The host's own `models-store.json` records for `gpt-5.6-luna`: context 272,000, max output 128,000, $0.20/$1.20 per Mtok, cache read 0.1×, cache write 1.25×, with a doubling tier above 272k. OpenRouter reaches the same models with a 1.05M context window. Published list pricing for Luna was $1/$6 before an announced 80% reduction; the host catalog's $0.20/$1.20 is consistent with the reduction having landed.
+**What settled it was not the cost analysis below.** Reading the *workstation's* catalog rather than the server's found the direct route dearer and smaller — OpenRouter prices `openai/gpt-5.6-luna` at $0.10/$0.60 against the direct route's $0.20/$1.20, with 1.05M context against 272k — and found the deciding property elsewhere: all six `openai-codex` models declare `compat.supportsToolSearch` and `supportsOpenAIGrammarTools`, and **none of the 273 OpenRouter models declares either**. Tool search is Pi's deferred-tool-loading mechanism, so the cheaper route would have committed the parent permanently to a fixed tool surface per epoch. The direct route is pinned despite price and window; OpenRouter is retained for scouting at the exact ID `deepseek/deepseek-v4-flash-0731`.
 
-**Costs:** the route determines which usage fields exist, and cache verification (`10` §10.3, ADR-035) requires separate uncached / cache-read / cache-write counters. A route that reports one combined number cannot satisfy the V0.3 cache regression gate. The larger OpenRouter window is worth little if the parent is kept below the compaction threshold by design, and adds a second party to the request path.
+Two corrections to the entry as originally written: the workstation is authenticated to **both** routes plus `gemini`, not to OpenRouter alone; and the flag evidence comes from Pi 0.80.10's catalog, four minors stale, which is why ADR-046 carries an explicit reopening condition and V0.1-T2 re-reads it (R-105).
 
-**Settles it:** one scripted two-request session per route, reading the raw usage object, asserting three distinguishable token fields and a non-zero cache read on request two.
+**Still to run, but no longer as a decision procedure:** the two-request usage probe on the chosen route, asserting three distinguishable token fields and a non-zero cache read on request two. It verifies the route can satisfy ADR-035; it does not choose between routes.
 
-### D2 — Parent model class
+### D2 — Parent model class — **DECIDED, ADR-046**
 
-**Undecided:** whether the parent runs the cheap-fast tier (`gpt-5.6-luna`, as currently requested) or a stronger model, with the cheap tier reserved for children.
+**Was undecided:** whether the parent runs the cheap-fast tier (`gpt-5.6-luna`) or a stronger model, with the cheap tier reserved for children.
 
-**Found:** the design gives the parent unusual responsibilities — it owns task state, commit finalization, delegation decisions and the interpretation of every gate report — while children are bounded, schema-constrained and re-runnable. The economics run the other way from the intuition: the parent's prefix is cached and its turns are few relative to children's, so the parent is the cheapest place in the system to buy quality.
+**Decided: the cheap-fast tier, `gpt-5.6-luna`.** The argument recorded below for a strong parent is sound in its diagnosis and wrong in its remedy. It is true that the parent's envelopes are consumed by children and checked by no gate, and that this makes its errors the expensive invisible ones. The answer is to keep the parent's job small — state, delegation, sequencing — and to route every phase whose *quality* is load-bearing to a worker under a compiled profile, where a gate does check the output (ADR-042). Buying a larger parent pays for judgement the architecture deliberately locates elsewhere.
 
-**Costs:** a weak parent produces bad envelopes, and bad envelopes are paid for by every child that consumes them. A strong parent raises a per-turn cost that caching already suppresses.
+The economics in the original entry also overstate the case: caching suppresses the parent's *input* and does nothing for its output, and reasoning output is where a parent's spend lives, so "the parent is the cheapest place to buy quality" holds for the prefix rather than for the bill.
 
-**Settles it:** run the V0.4 bootstrap task with each parent class and compare accepted-first-time rate and total run cost, not parent cost.
+**Settled by judgement, not measurement.** The comparison this entry proposed — running the V0.4 bootstrap task per parent class — is exactly the model evaluation ADR-047 removes from the project.
 
 ### D3 — `UserQuestionV1` adapter placement and extent
 
@@ -86,15 +86,15 @@ So the duplicate-index and duplicate-watcher harm the rule protected against **d
 
 **Rejected along the way:** restricting the graph to Pi processes and routing all code-aware work to native children. It is coherent — native children inherit the full surface and can already be routed to another vendor's model by `modelClass` — but it makes every delegated phase structurally weaker at exactly the work worth delegating, and the engine's design means it buys nothing. What it did clarify is *when* a foreign CLI is worth spawning at all, which is now `12` §4.1: for the vendor's harness, not the vendor's model.
 
-### D6 — RAG engine
+### D6 — RAG engine — **DECIDED, ADR-048**
 
-**Undecided:** which engine backs `knowledge_search` / `knowledge_get`. The plan specifies the contract, the result shape, the bounding rules and the ownership boundary against CodeGraph and Hermes — and names no engine.
+**Was undecided:** which engine backs `knowledge_search` / `knowledge_get`. The plan specified the contract, the result shape, the bounding rules and the ownership boundary against CodeGraph and Hermes — and named no engine.
 
-**Found:** the local-first pattern has converged on SQLite with FTS5 plus `sqlite-vec`, hybrid BM25 and vector retrieval with reciprocal-rank fusion, and local GGUF embedding models. `qmd` (Hermes Agent's document indexer) implements exactly that and stores its index at `~/.cache/qmd/index.sqlite` with no cloud dependency. LanceDB and Chroma are the strongest embedded alternatives; the heavier frameworks bring orchestration this design already owns.
+**Decided by removing the question from this layer rather than answering it.** There is no local RAG, no local index and no local embedding model. Project-knowledge retrieval becomes a remote-tier service at V0.7; until then the harness reads `docs/` directly, which is what a ~5,500-line corpus inside the working repository makes correct. The engine choice moves with the capability and is made when the service is built, against a corpus that may by then be larger and elsewhere.
 
-**Costs:** the corpus is this repository's `docs/` — currently about 5,500 lines of prose. At that size an embedding-free FTS5 index answers most queries, and the entire question is whether semantic retrieval earns its dependency. Adopting `qmd` also imports a component from Hermes, whose coordinator role is deliberately deferred; using its indexer is not adopting its agent.
+The evidence originally gathered here — the SQLite/FTS5 + `sqlite-vec` local-first pattern, `qmd`, LanceDB, Chroma — was removed from this entry rather than carried forward, because it evaluated local engines for a local component that will not exist. What survives is the discipline it recommended, now recorded in ADR-048 and R-107: retrieval earns its dependency against a recorded miss list, not in advance.
 
-**Settles it:** build the two-call broker against FTS5 first and measure retrieval failures on twenty real questions. Add vectors only against a recorded miss list — this is the same discipline applied to every other optimization here.
+**The residual risk is the trigger, not the choice** (R-107): "read the files directly" degrades silently as the corpus grows, so the reopening condition is stated in advance — a routine question needing more than three file reads, or `docs/` passing roughly 15,000 lines.
 
 ### D7 — Editing-safety owner
 
@@ -120,11 +120,7 @@ So the duplicate-index and duplicate-watcher harm the rule protected against **d
 
 **Undecided:** RTK, the narrow LeanCTX profile, or neither.
 
-**Found:** RTK (`rtk-ai/rtk`) is an MIT Rust binary, ~39.5k stars, v0.38.0 in late April 2026 with 141 releases, claiming 60–90% compression across 50+ commands at <10ms overhead, installed by platform method and wired through a `PreToolUse`-style hook that rewrites `git status` to `rtk git status`. LeanCTX is a single Rust binary with 76 MCP tools claiming 60–90% fewer tokens; a third-party field report on 26 July 2026 measured 64.1% less context overall — but attributes 89.7% of the saving to MCP traffic compression and only 10.3% to shell integration, and an independent Pi benchmark previously reported a configuration where LeanCTX produced *higher* billed input.
-
-**Costs:** the field-report breakdown is the material finding. Our shell output is already bounded by Pi truncation and by `project_check` preferring JSON/SARIF/JUnit over text, and our MCP surface is deliberately one lazy proxy — so both of the places LeanCTX saves are places this design has already minimized. The honest prior is that measured savings here will be far below the advertised range.
-
-**Settles it:** the Stage 6 baseline's counters for results over 5 KB and 50 KB. If the tail is thin, neither is installed, and both stay in the post-1.0 backlog.
+**Found:** RTK
 
 ## D. Parity gaps — no owner exists
 

@@ -10,8 +10,8 @@ The sequence follows ADR-040: the **execution layer** — everything that makes 
 | --- | --- | --- | --- |
 | V0.0 | Canonical repo & tracking | Single source of truth, gitflow, task tracker, GitHub sync | — |
 | V0.1 | Baseline interactive harness | Daily-usable local Pi with permission gating, real PTY, structured questions | 0–2 |
-| V0.2 | Code intelligence & validation | Harness understands this repo (CodeGraph, Pi Lens, RAG) and `project_check` gates its commits | 3, 5 |
-| V0.3 | Session control | Frozen capability manifests, skill filtering, measured context economy, cache guard | 2.6, 4 |
+| V0.2 | Code intelligence & validation | Harness understands this repo (CodeGraph, Pi Lens, `ast-grep`) and `project_check` gates its commits | 3, 5 |
+| V0.3 | Session control | Frozen capability manifests, skill filtering, measured context economy, cache guard | 2.6 |
 | V0.4 | Factory core & self-hosting | Executor + `pi-factory` + commit finalization + event stream v0 + `self-dev` persona — the system starts building itself | 6, 6.5, 11.5 |
 | V0.5 | Delegation & foreign CLI workers | Subagents in worktrees, local MCP registry, and Claude Code/Codex/Antigravity as compiled-profile phase workers | 9, 10, 11 local |
 | V0.6 | **Switch: parity gate** | Web surface, editor integration, portable export; dual run against Claude Code; the harness becomes the daily driver | 12.4 + parity gaps |
@@ -20,7 +20,7 @@ The sequence follows ADR-040: the **execution layer** — everything that makes 
 
 | Version | Name | Value you can use immediately | Plan stages |
 | --- | --- | --- | --- |
-| V0.7 | Remote services & memory | Server hosts MCP proxy/registry, RAG and memory; isolated `server-worker` profile; reviewed cross-session knowledge | 11 server, 13, 7-equivalent |
+| V0.7 | Remote services & memory | Server hosts MCP proxy/registry, the project-knowledge RAG (stage 4, moved here by ADR-048) and memory; isolated `server-worker` profile; reviewed cross-session knowledge | 11 server, 4, 13, 7-equivalent |
 | V0.8 | Mission control plane alpha | Orchestrator, mission board, leases, statechart lifecycles, suggest-only router, read-only DAW web UI | 08/09 designs |
 | V0.9 | Interfaces & learning loop | Telegram gateway, persona registry + generated editor UI, per-persona memory proposers, candidate promotion with canary | 15, 08 §4–6 |
 | V1.0 | Packaged topology | Containerized control plane + runners, Forgejo, runner registration, workstation as peer runner, deploy runbook executed | 09 §7, 07 |

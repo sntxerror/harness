@@ -19,7 +19,7 @@ Build a powerful but controlled Pi installation in layers. Each responsibility h
 | Code architecture and impact | CodeGraph |
 | Exact language semantics and edit diagnostics | Native Pi Lens in conservative mode; no self-MCP mirror or second LSP |
 | Structural matching/codemods | `ast-grep` CLI |
-| Project documents and decisions | One local RAG |
+| Project documents and decisions | **Deferred to the remote tier at V0.7** (ADR-048); read the files directly until then |
 | Correctness | Repository checks through `project_check` |
 | Closed-loop sequencing and acceptance | Deterministic `pi-factory` runtime; models are bounded phase workers |
 | Commit/changelog/documentation finalization | Parent-only skill + preparation script + deterministic Git hooks |
@@ -227,22 +227,18 @@ The repository mount is still real data. Gondolin's `/workspace` is write-throug
 
 ### 0.5 Inventory and baseline
 
-```bash
-node --version
-npm --version
-git --version
-rg --version
-sg --version || ast-grep --version
-pi --version 2>/dev/null || true
-```
+Take the inventory with `scripts/executor-inventory.sh`, which probes each command three ways — login shell, non-interactive executor, and the vendored `bin/` of each profile root — and reports the disagreements. A bare `rg --version` at a prompt is the wrong instrument and gives the wrong answer, as V0.1-T1 demonstrated on this workstation.
 
 Record:
 
 - current Pi version;
-- current installed extensions;
+- current installed extensions, **per profile root** rather than for the machine;
 - available model/provider logins;
 - Claude Code, Codex CLI and Antigravity CLI versions;
+- which commands resolve in the executor, which resolve only at a prompt, and which exist **only inside a profile's vendored `bin/`**;
 - representative task cost, tool-call count and duration.
+
+The third category is not a footnote. Pi vendors `rg` and `fd` into `$PI_CODING_AGENT_DIR/bin/` and invokes them by path, so they exist for Pi and do not exist for anything Pi spawns — and a newly created profile root has neither until Pi populates it. Two profiles on one machine therefore disagree about whether a command exists, which is R-003 with a sharper edge than any PATH problem, and it is the reference case for V0.3-T2's preflight (R-106).
 
 Do not enable project-local `.pi/settings.json` from an untrusted repository until it has been reviewed. Project settings have historically included execution-affecting fields.
 
@@ -709,6 +705,8 @@ Place a concise project instruction in the repository's chosen agent-guidance fi
 ---
 
 ## Stage 4 — Connect one explicit knowledge RAG
+
+**Scheduled at V0.7, in the remote tier, not in the execution layer (ADR-048).** The coding harness ships without `knowledge_search`, `knowledge_get` or any local index, and no local embedding model is installed at any point. The contract below is what the remote service implements when it is built; it is not a local component waiting to be wired. Until then the agent reads `docs/` directly, which is what the corpus size makes correct.
 
 The RAG owns prose and durable project knowledge, not current source-code structure.
 
@@ -1637,7 +1635,7 @@ Rules:
 
 Use `session_before_compact` only to enrich or replace the one Pi compaction entry. Do not let LeanCTX, Hermes, a todo extension and a memory extension each inject their own session recap. If the coordinator produces the summary, it must carry `firstKeptEntryId`, token accounting and serializable `details` exactly as Pi expects.
 
-Pi's lifecycle permits the coordinator to call a separate summarization model. Trial this only after establishing a native baseline. Select the summary model once in the session manifest, use the same structured serialization and cancellation signal, record usage, and benchmark constraint/decision/failure retention. A cheap model is acceptable only if it meets the continuity test suite; “nearly free” is not sufficient evidence. This remains a Pi-native compaction hook and does not authorize LeanCTX or Hermes to rewrite history.
+Pi's lifecycle permits the coordinator to call a separate summarization model. **We do not use one** (ADR-047). Justifying it would require a continuity benchmark comparing models, which is exactly the class of work this project does not do, and the alternative to running that benchmark is not "adopt it unmeasured" — it is to keep the parent's own model as the summarizer, where continuity is a property of the same model that holds the conversation. Compaction stays a Pi-native hook on the pinned model, and neither LeanCTX nor Hermes may rewrite history.
 
 ### 12.3 Three different kinds of “compression”
 

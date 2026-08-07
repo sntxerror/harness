@@ -1,5 +1,40 @@
 # Bundle Changelog
 
+## 7 August 2026 (provider pin, evaluation policy, retrieval deferral, V0.1-T1)
+
+- Added ADR-046: the parent runs the direct `openai-codex` OAuth route pinned to `gpt-5.6-luna`
+  at thinking `medium`, with OpenRouter retained for scouting only at `deepseek/deepseek-v4-flash-0731`.
+  Chosen *against* price and window — OpenRouter is half the price with 1.05M context against 272k —
+  because all six `openai-codex` models declare `compat.supportsToolSearch` and none of OpenRouter's
+  273 does, and deferred tool loading is the one property that cannot be bought back by configuration.
+  Settles D1 and D2. Rejected a stronger parent: quality-bearing phases route to gated workers.
+- Added ADR-047: we evaluate our tooling, never models. Removed the D2 settling test and the
+  continuity benchmark gating a separate compaction model — so compaction runs on the parent's pinned
+  model. The V0.6 parity gate stays; it measures our harness against the tool it replaces.
+- Added ADR-048: no RAG, no index and no local embedding model in the coding harness. Project
+  knowledge becomes a remote-tier service at V0.7 and plan Stage 4 moves with it; the harness reads
+  `docs/` directly. Settles D6. **Removed V0.2-T4** rather than deferring it in place.
+- Added R-105 (the pin's justification was read from a stale catalog and V0.1-T2 must re-read it),
+  R-106 (Pi vendors `rg`/`fd` per profile root, so two profiles can disagree about whether a command
+  exists), R-107 (the "just read the files" argument expires silently) and R-108 (a forbidden
+  evaluation means nobody watches for a pin's stated reason expiring). Closed R-019; deferred R-028.
+- **Completed V0.1-T1.** Backed up `~/.pi` to `docs/archive/pi-workstation-backup-2026-08-07.tar.gz`
+  excluding both `auth.json` files and `agent/sessions/`, verified restorable at 1589 files with
+  `diff -r` clean and swept clean of credential-shaped strings; created `~/.pi/profiles/trusted` and
+  `scripts/pi-trusted.sh`; added `scripts/executor-inventory.sh`.
+- **Found an OpenRouter API key inside a session transcript** while sweeping the first archive before
+  staging it — `sk-or-v1-` + 64 hex, not the key currently in `auth.json`. Never committed; the
+  archive was rebuilt without `agent/sessions/`. Recorded because it establishes that excluding
+  `auth.json` does not make a `~/.pi` backup safe: transcripts are credential-bearing.
+- **Corrected a fact recorded in two documents:** there is no system ripgrep on the workstation and
+  `rg` was never a shell function. Pi vendors `ripgrep 15.1.0` and `fd 10.4.2` into the profile's
+  `bin/` and calls them by path. Also corrected: the workstation is authenticated to both provider
+  routes, not OpenRouter alone, and `/home/sntx/RND/archive` does not exist.
+- **Changed V0.1-T1's acceptance criterion in the same commit:** dropped "representative task
+  metrics", which needs Pi installed in the profile and a reachable model and was never satisfiable
+  at Stage 0; added the vendored-`bin/` clause, which T1 demonstrated.
+- `develop` fast-forwarded to the replan branch; previous tip preserved as `archive/develop-pre-replan`.
+
 ## 7 August 2026 (two-layer re-sequencing and the switch gate)
 
 - Added ADR-040: the system has an execution layer and an agentic layer, and the execution layer is

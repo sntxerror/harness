@@ -13,8 +13,8 @@ The line below fixes that by separating what makes *one task* run well from what
 | Concern | Layer | Owner |
 | --- | --- | --- |
 | Interactive session, tools, permissions, PTY | Execution | Pi upstream + permission-system + interactive-shell |
-| Code intelligence: graph, LSP, AST, lexical search | Execution | CodeGraph, Pi Lens, `ast-grep`, `rg` |
-| Project knowledge retrieval | Execution | One local RAG |
+| Code intelligence: graph, LSP, AST, lexical search | Execution | CodeGraph, Pi Lens, `ast-grep`, and Pi's vendored `rg` — which lives in the profile's `bin/`, not on `PATH` (R-106) |
+| Project knowledge retrieval | **Agentic** | Remote knowledge service at V0.7 (ADR-048) — the execution layer reads `docs/` directly |
 | Correctness evidence | Execution | `project_check` on the shared `Executor` |
 | Capability truth, cache contract, skill catalog | Execution | `pi-session-control` |
 | Context economy: compaction, tool-output bounding, lean reads | Execution | Pi compaction + pre-insertion filters |
@@ -42,7 +42,7 @@ Two boundary cases are settled explicitly because they look like they belong to 
 Finished is not "all stages implemented". It is the conjunction of four properties, each of which has a test somewhere in the version's task file:
 
 1. **One task runs end to end inside the harness** — intake, recon, plan, implement, check, review, commit — with evidence that survives inspection and a commit that no path can produce without a fresh receipt.
-2. **The model works against real code intelligence**, not against `grep` and hope: definitions and references come from the LSP, architecture and blast radius from the graph, structural edits from `ast-grep`, decisions from the RAG, and the routing between them is measured on five representative questions.
+2. **The model works against real code intelligence**, not against `grep` and hope: definitions and references come from the LSP, architecture and blast radius from the graph, structural edits from `ast-grep`, and the routing between them is measured on five representative questions. Decisions come from reading `docs/` directly — retrieval is a remote-tier service at V0.7 (ADR-048), and its absence is a recorded position rather than an unfilled row.
 3. **The context economy is measured, not asserted** — a frozen prefix that something checks, cache reads that appear in traces from the second request onward, a skill catalog costing metadata only, and an MCP surface within its stated budget.
 4. **Work can be delegated** to a parallel worktree child or to a foreign CLI under a compiled profile, and the result returns as a typed envelope that a gate can reject.
 

@@ -58,7 +58,7 @@ This documentation set separates current implementation authority from history, 
 - Mid-session change is append-only: operator instructions arrive as `system`-role messages and capabilities as additive tool loads; the prefix is never edited, and conformance is hash-verified rather than assumed (ADR-034/035, `10`).
 - `@gotgenes/pi-permission-system` provides broad allow/ask-on-risk intent approval. `pi-interactive-shell` provides trusted human PTY and sudo password entry.
 - CodeGraph is the only code relationship graph. Native Pi Lens is the only Pi LSP/diagnostics integration, with context injection, formatting and autofix disabled initially; its MCP mirror is not connected back into Pi.
-- Project documentation and decisions remain in one explicit RAG. Hermes is later procedural/episodic memory, not a replacement for RAG or Pi compaction.
+- Project documentation and decisions remain in one explicit RAG — **a remote-tier service from V0.7, never a local one** (ADR-048). The coding harness reads `docs/` directly and installs no embedding model. Hermes is later procedural/episodic memory, not a replacement for RAG or Pi compaction.
 - Pi owns conversation compaction. Tool output is compacted before insertion; LeanCTX may be tested only for narrow pre-insertion read/output behavior.
 - `pi-session-control` is the first custom package: immutable profile/capability compilation, command preflight, skill filtering and cache-contract enforcement.
 - `project_check` is the authoritative validation tool. The parent owns commit, changelog and documentation finalization.

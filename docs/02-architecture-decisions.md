@@ -486,6 +486,50 @@ The bridge is a thin proxy over the engine's MCP server and does not run its own
 
 **Rejected:** a second graph engine of any kind; two graph surfaces inside one session; a per-worker CodeGraph index or watcher; graph access as an ambient property of any agent rather than a declared profile grant; keeping the blanket MCP prohibition now that its stated harm is known not to occur.
 
+### ADR-046 — The parent runs `openai-codex/gpt-5.6-luna`; OpenRouter is a scouting route, not the main one
+
+**Status:** Accepted (7 August 2026); settles D1 and D2; implements the pin requirement in ADR-035 and `10` §10.3
+
+The parent Pi session reaches its model through the direct **`openai-codex`** OAuth route, pinned to the exact ID **`gpt-5.6-luna`** at thinking level `medium`. OpenRouter remains authenticated and is used only for specific scouting queries where a second vendor's model is the point of the query; its default there is the exact dated ID **`deepseek/deepseek-v4-flash-0731`**, never the `~deepseek/deepseek-v4-flash-latest` alias and never the rolling `deepseek/deepseek-v4-flash` pointer.
+
+The route is decided by capability, not by price — which matters because on this workstation's catalog OpenRouter is the *cheaper* route for the same model ($0.10/$0.60 against $0.20/$1.20 per Mtok) and offers 1.05M context against 272k. What it does not offer is deferred tool loading. Every model in the `openai-codex` catalog declares `compat.supportsToolSearch` and `supportsOpenAIGrammarTools`; **none of the 273 OpenRouter models declares either**. Tool search is Pi's mechanism for changing a tool surface additively, and the parent is the one session whose surface is meant to grow — the MCP lazy proxy, the graph surface, the skill catalog all arrive mid-life. Choosing the cheaper route would commit us permanently to ADR-034's fallback, a fixed tool surface for the whole epoch, in exchange for a window the parent is designed never to reach.
+
+Two smaller properties follow the same way. `openai-codex-responses` is a first-party API surface and the one Pi's own `showCacheMissNotices` already reads, where OpenRouter is `openai-completions` behind a third party — one more place ADR-035's three separate token counters can arrive as a single combined number. And grammar tools, declared only on the direct route, are the cheapest path to the typed envelopes the gates consume.
+
+The parent runs the cheap-fast tier rather than a stronger one, which is the opposite of what the dossier's framing suggested and is decided deliberately. The argument for a strong parent — it authors envelopes no gate checks, so its errors are the invisible ones — is real, and it is answered by keeping the parent's work small rather than by buying a larger model: the parent owns state and delegation, and every phase whose *quality* is load-bearing is routed to a worker under a compiled profile (ADR-042), where a gate does check it. Caching suppresses the parent's input cost and does nothing for its output, so a stronger parent is a real recurring cost against a benefit this architecture already obtains elsewhere.
+
+**Reason:** the pin is part of the frozen prefix, so it must be exact and it must be chosen for the properties the prefix depends on. Tool-search support is the only property in this comparison that cannot be bought back later by configuration.
+
+**Rejected:** OpenRouter as the parent route despite its lower price and larger window; `gpt-5.6-terra` or `gpt-5.6-sol` as the parent; any alias or rolling pointer as a recorded model ID; the `openrouter/free` router, which selects a different backing model per request and is therefore incompatible with a frozen prefix by construction.
+
+**Contingent on one fact:** `supportsToolSearch` was read from Pi 0.80.10's catalog. If the V0.1-T2 upgrade to 0.84.x declares tool search for OpenRouter models, this ADR is reopened, because the reason for accepting the worse price and smaller window would no longer hold (R-105).
+
+### ADR-047 — We evaluate our tooling, never models
+
+**Status:** Accepted (7 August 2026); amends ADR-041 by exclusion; supersedes the comparison plans in ADR-019's orbit
+
+No work in this project benchmarks, ranks or comparatively evaluates language models. Model choice is made once, recorded as a pin with its reason, and revised when a stated property changes — not by running a task against several models and reading the scores. Where a plan step previously required a model comparison to proceed, that step is removed rather than deferred.
+
+What remains measured is **our own tooling**, and only where a number changes a decision: the cache regression gate (V0.3-T9), prefix and token budgets, the parity gate's dual run against the environment actually in daily use (ADR-041), and any tool-integration A/B where two components would otherwise both be installed to do one job. These measure components we build or install, not vendors' models.
+
+**Reason:** model evaluation is expensive, ages within weeks, and answers a question this design deliberately does not ask — the architecture routes work by phase to a profile, so its correctness comes from gates and envelopes rather than from having picked the best model. A comparison plan embedded in a task file is a blocking dependency on work nobody intends to do, which is worse than an unmeasured pin.
+
+**Rejected:** the D2 settling test (running the V0.4 bootstrap task per parent class and comparing accepted-first-time rate); a continuity benchmark as the precondition for a separate compaction model — the separate compaction model is simply not used; any "measure and then choose the model" step as a gate on a version.
+
+### ADR-048 — Project-knowledge RAG belongs to the remote tier, not to the coding harness
+
+**Status:** Accepted (7 August 2026); supersedes the local-RAG placement in ADR-010 and ADR-040's layer table; settles D6
+
+There is no RAG in the execution layer. `knowledge_search` and `knowledge_get` are not part of the coding harness, no local index is built over `docs/`, and **no local embedding model is installed**. The project-knowledge corpus becomes a service in the remote tier at V0.7, alongside the MCP registry and memory service, and the contract in ADR-010 describes that service when it is built rather than something local that precedes it.
+
+ADR-010's ownership rule is unchanged and still binding: RAG owns authoritative prose, CodeGraph owns relationships, Hermes owns reviewed procedures and episodes, and source code is not re-indexed to duplicate the graph. What changes is *where and when* — placement, not ownership.
+
+This costs the execution layer one capability, and the cost is smaller than it looks: the corpus is this repository's own `docs/`, the harness works inside the repository with `read`, `grep` and the vendored `rg`, and the questions a RAG would answer are answerable by reading files the agent already has. Retrieval earns its dependency when the corpus outgrows direct reading or lives somewhere the agent cannot open — both of which are remote-tier conditions.
+
+**Reason:** an embedding model, an index and an engine are three components with a lifecycle, a staleness failure mode and a duplicate-index risk (R-025, R-039), bought at V0.2 to query documents the agent can already open. Deferring it removes the largest unowned selection decision from the execution layer without removing anything the harness does.
+
+**Rejected:** any local embedding model or vector store; `qmd`, LanceDB or Chroma as a V0.2 component; an FTS5-only local index as a stepping stone, which would still be an index to build, own and invalidate; treating `docs/11`'s "one local RAG" row as still current.
+
 ## Superseded directions
 
 | Earlier direction | Why it changed | Current decision |
@@ -510,3 +554,7 @@ The bridge is a thin proxy over the engine's MCP server and does not run its own
 | Foreign harnesses accept vendor defaults | A vendor CLI re-derives with its own tools what this system already owns better, at a measured ~33k-token prefix | Registry-generated MCP exports, tool removal, hook enforcement, measured prefix (ADR-043) |
 | PTY adapters first, ACP later | ACP adoption changed and Codex's headless JSON already satisfies the envelope contract without either | Structured headless, then ACP, then PTY (ADR-044) |
 | CodeGraph must never be exposed through MCP | The stated harm is caused by a second engine, not a second consumer; the engine shares one daemon and one watcher across sessions by design | One index and one daemon; one graph surface per session; graph access as a per-profile grant (ADR-045) |
+| Route chosen on price and context window | The only property that cannot be bought back later by configuration is deferred tool loading, and one route declares it | Direct `openai-codex` route despite being dearer and smaller; OpenRouter for scouting only (ADR-046) |
+| Buy a stronger parent because its errors are ungated | Correct diagnosis, wrong remedy — quality-bearing phases route to profiled workers where a gate does check them, and caching suppresses only the parent's input | Parent on the cheap-fast tier; quality bought per phase (ADR-046) |
+| Choose the parent model by running a task against each | Model evaluation ages within weeks and gates a version on work nobody intends to do | Pin with a stated reason; evaluate our tooling only (ADR-047) |
+| One local RAG in the execution layer | Three components with a staleness and duplicate-index failure mode, bought to query documents the agent can already open | No RAG, no embedding model locally; project knowledge is a remote-tier service at V0.7 (ADR-048) |
