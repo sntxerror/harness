@@ -27,10 +27,30 @@ Build a powerful but controlled Pi installation in layers. Each responsibility h
 | Learned procedures/preferences | Hermes memory, later |
 | Shell-output compression | RTK initially; LeanCTX only as a measured alternative |
 | Delegation inside one harness | `@gotgenes/pi-subagents` + worktree companion |
-| Foreign coding harnesses | Custom attachable session broker and external-agent adapter |
+| Foreign coding harnesses | Custom attachable session broker and provider adapters (`12`) |
 | External services | Lazy `pi-mcp-adapter` |
+| Web search and page fetch | **Unowned** — parity gap D10, must be assigned before the switch |
+| Image and screenshot input | **Unverified** — parity gap D11 |
 
 Do not install every layer at once. Complete the acceptance test for a stage before moving to the next one.
+
+## Layer map
+
+The stages below are units of implementation content, and their ordering constraints are technical. Which stages are *scheduled* together, and in what order the resulting capability arrives, is `ROADMAP.md`'s business, and since August 2026 it follows the two-layer split in `11-execution-and-agentic-layers.md` (ADR-040).
+
+| Stages | Layer | Scheduled at |
+| --- | --- | --- |
+| 0, 1, 2 | Execution — baseline session, intent gating, PTY, questions | V0.1 |
+| 3, 5 | Execution — code intelligence and validation authority | V0.2 |
+| 2.6, 4 | Execution — capability truth, skill filtering, cache contract | V0.3 |
+| 6, 6.5, 11.5 | Execution — baseline traces, factory core, commit finalization | V0.4 |
+| 9, 10, 11 (local) | Execution — subagents, foreign CLI workers, local MCP registry and lazy proxy | V0.5 |
+| 12.4, plus the parity gaps | Execution — portable export, web surface, editor integration; then the switch | V0.6 |
+| 11 (server), 13 | Agentic — remote service tier and reviewed memory | V0.7 |
+| 15 and the 08/09 designs | Agentic — mission control, interfaces, packaged topology | V0.8–V1.0 |
+| 7, 8, 12.1–12.3, 14 | Optimization — scheduled from traces, not from position in this file | Post-switch |
+
+Two stages moved for reasons worth restating where they will be read. **Stage 11's registry and lazy proxy are local first**: foreign workers need a generated `.mcp.json` before any server exists, and hosting the registry remotely later changes where a process runs, not what the harness can do. **Stage 2.5's isolated profile is deferred past the switch**: the execution layer is local, attended and operates on trusted repositories, which is the `trusted-local` threat profile — isolation becomes load-bearing when execution goes unattended or touches unfamiliar code, and neither happens before the switch (decision D17, R-102).
 
 ## The execution contract
 
@@ -74,7 +94,7 @@ This outer loop never bypasses the execution contract above; each agent or code 
 | `bash` and user `!` | Existing `bash`; no per-CLI tools | Unprivileged host | Proxied to the guest | Permission Bash rules before dispatch; runtime boundary enforces effects |
 | `interactive_shell` | One PTY tool, main agent only | Host, trusted-local only | Hidden; a future guest PTY must be a separate audited proxy | Permission alias parses `command`/`cwd`; risky and `sudo` commands ask |
 | `ast-grep`, `rg`, Git, formatters, tests | Hidden behind `bash` | Host PATH | Must be installed in sandbox image and run there | Bash policy plus repository/worktree boundary |
-| CodeGraph | One compact native bridge | Host index/broker | Run in sandbox, disable, or use a narrow read-only repo-relative broker | Read-only; reject arbitrary paths; never duplicate through MCP |
+| CodeGraph | One surface per session — native bridge or proxy, never both | One shared daemon and index per repository | Run in sandbox, disable, or use a narrow read-only repo-relative broker | Read-only; reject arbitrary paths; foreign workers receive the MCP server as a declared profile grant (ADR-045) |
 | LSP | Exactly one native LSP surface | Host only for trusted repositories | LSP and language server inside the sandbox, or disabled | Language servers may execute project code; never run two clients/servers for one responsibility |
 | Knowledge RAG | `knowledge_search`, `knowledge_get` | Host service | Narrow host broker is acceptable | Read-only retrieval allowed; ingestion/writes slash-commanded or asked; no arbitrary host paths |
 | `project_check` | One model tool | Calls executor service | Calls the same sandbox executor—never `child_process` on host | Declared repo checks only; no silent fixes |
@@ -607,6 +627,10 @@ CodeGraph owns:
 - blast-radius and impact analysis.
 
 Do not install GitNexus or another code graph alongside it. CodeGraph already watches project changes, so a second graph means a second index, watcher and conflicting model tool surface.
+
+That harm comes from a second *engine*, not from a second *consumer*, and the distinction decides who may use the graph (ADR-045). CodeGraph keeps a per-project SQLite/FTS5/WAL index at `.codegraph/codegraph.db` and shares **one background server across sessions over a local socket**, with one debounced OS-level watcher; concurrent clients attach to that server rather than building anything. So the invariants to enforce are one index and one daemon per repository, one graph surface per session, and one authority for graph questions — not one interface for the whole system. Graph access is therefore a **declared profile grant**: Pi's parent and its native children reach it through the Pi-native surface, and a foreign CLI worker whose phase needs architecture or blast radius receives the CodeGraph MCP server in its generated export, exactly as §3.2 already permits for the Pi Lens mirror.
+
+Which Pi-native surface to register is measured, not assumed. `@vndv/pi-codegraph` (0.1.10) is a thin proxy that registers eight named tools — `codegraph_search`, `_node`, `_files`, `_callers`, `_callees`, `_impact`, `_explore`, `_status` — each forwarding one request to `codegraph serve --mcp`, and it starts no watcher or index of its own, so projects must be pre-indexed with `codegraph init -i`. The engine's own MCP surface defaults to a single `codegraph_explore` tool, with the others opt-in through `CODEGRAPH_MCP_TOOLS`. Eight schemas in the frozen prefix against one is a measurable cost; eight named operations mapping onto the routing policy in §3.4 is a measurable benefit. The capability compiler chooses from the measured prefix cost and the routing traces. Because the bridge is only a proxy, its abandonment costs nothing structural: consume the engine through the lazy MCP proxy instead (R-103).
 
 In `trusted-local`, the index and bridge may run on the host. In `isolated-local`, do not pretend the bridge is contained: either bake CodeGraph into the guest, disable it, or expose a narrow host broker that accepts only repo-relative symbolic queries and returns read-only structured results. Do not let the model pass arbitrary host paths to that broker.
 
@@ -1304,8 +1328,10 @@ PiSubagentAdapter
 ClaudeCodeAdapter
 CodexCliAdapter
 AntigravityAdapter
-ACPAdapter (later)
+AcpAdapter
 ```
+
+Each adapter's provider-specific control surface — headless flags, model and effort selection, MCP export path, tool restriction, prompt injection and known defects — is specified in `12-foreign-cli-workers.md`, together with the compiled provider profiles and the cheap-but-capable model defaults. The channel each adapter uses follows ADR-044's preference order: native structured headless output first, ACP second, PTY last. `AcpAdapter` is no longer marked "later"; its rank is fixed and whether it is built in the delegation version is decision D13.
 
 ### 10.3 Persistent PTY/session broker
 
@@ -1457,7 +1483,7 @@ Preferred project file `.mcp.json`:
 
 Keep the single proxy tool by default—approximately 200 schema tokens—and promote only frequently used, decision-critical tools through `directTools`. Promoting or demoting a `directTools` entry changes the tool surface and the session compatibility hash: it takes effect only in a new session (or a deliberately recorded cache epoch), never mid-session. Server/tool discovery output is bounded (cap listed servers and per-listing bytes); listing is free for allowlisted servers, but activation of a mutating server follows the same permission gates as its calls.
 
-Use MCP for remote/stateful APIs, authenticated systems, databases, browser services and an existing RAG service. Do not expose CodeGraph, LSP or local CLIs again through MCP.
+Use MCP for remote/stateful APIs, authenticated systems, databases, browser services and an existing RAG service. Do not expose CodeGraph, LSP or local CLIs again through MCP **to a session that already has them natively** — the rule is one surface per session, not one interface per system (ADR-045). Exporting the CodeGraph MCP server or the Pi Lens mirror to a foreign worker that has no native path is the intended use of both, and it reuses the running engine rather than starting a second one.
 
 Gate at the semantic operation, not only at server startup:
 
@@ -1473,7 +1499,7 @@ Maintain one canonical MCP registry and compile a task-specific subset for each 
 
 | Child role | Direct MCP access |
 | --- | --- |
-| Scout/reviewer | CodeGraph read-only only when repeated exploration is needed; otherwise parent passes references |
+| Scout/reviewer | CodeGraph read-only only when repeated exploration is needed; otherwise parent passes references. A *foreign* reviewer gets the CodeGraph server by default: without it, a diff review is a text review (ADR-045) |
 | Implementer | Project knowledge and CodeGraph read-only when justified; no memory writes |
 | Researcher | Project knowledge plus one browser/web surface |
 | Commit finalizer | None by default |
@@ -1946,7 +1972,7 @@ pi install npm:pi-mcp-adapter
 - RTK and LeanCTX shell interception together;
 - another LSP client or Pi Lens MCP beside native Pi Lens;
 - Pi Lens automatic context injection, formatting or autofix in the balanced profile;
-- direct and MCP exposure of the same capability;
+- direct and MCP exposure of the same capability inside one session (across sessions this is the intended export path — ADR-045);
 - Hermes/LeanCTX/Pi all restoring session summaries;
 - multiple todo/plan/goal systems;
 - automatic write-capable external agents in the shared checkout;
@@ -1967,6 +1993,7 @@ pi install npm:pi-mcp-adapter
 | Gondolin + host LSP/CodeGraph/MCP/PTY | Built-ins are contained but extension processes are not | Guest process, narrow broker, or disable; whole-process sandbox for strongest boundary |
 | Gondolin + RTK only on host | Rewritten command may no longer execute in guest | Install RTK in image or disable it |
 | CodeGraph + GitNexus/code RAG | Duplicate indexes, watchers and schemas | CodeGraph only |
+| CodeGraph native bridge + CodeGraph MCP in one session | Two schemas for one capability in one frozen prefix; the model cannot tell which to call | One surface per session, chosen by the capability compiler from measured cost (ADR-045); the other interface exists for sessions that lack the first |
 | Native Pi Lens + another Pi LSP/Pi Lens MCP | Duplicate servers, diagnostics, actions and schemas | Native Pi Lens only in trusted profile; no self-MCP mirror |
 | Pi compaction + LeanCTX/Hermes recap | Competing/stale resume narratives | Pi only; other systems return references or typed contributions |
 | RTK + LeanCTX shell rewrite | Double transform and lost raw semantics | A/B, one active |
@@ -2015,24 +2042,21 @@ Re-run the conflict audit whenever an extension begins providing a new graph, me
 
 ## Immediate next action
 
-Execute this order:
+Execute this order. It is the execution layer, and it ends at the switch; nothing in the agentic layer starts before step 13 (ADR-040).
 
-1. Back up the current Pi directory and create separate `trusted` and `isolated` agent directories/launchers.
+1. Back up the current Pi directory and create the `trusted` agent directory and launcher. The `isolated` root is created but left empty until its version arrives (D17).
 2. Install upstream Pi in `trusted-local`; snapshot its vanilla tool surface.
-3. Install pinned permission-system, interactive shell and structured-question package; apply the ask-on-risk policy and test ordinary commands plus the PTY `sudo` flow. Defer todo until long-task traces justify it.
-4. Build `pi-session-control`; freeze permissions/capabilities, filter unavailable commands/skills and prove cache-prefix invariants before adding specialists.
-5. Build `isolated-local` from a pinned official Gondolin example in a disposable worktree; add default-deny network, path mapping and fail-closed behavior; pass the ten isolation tests.
-6. Add CodeGraph and native Pi Lens in conservative mode to `trusted-local`. Do not expose Pi Lens MCP back to Pi; add intelligence to isolation only after guest execution or a narrow broker is proven.
-7. Connect the two-call RAG, then build the shared `Executor` and `project_check` correctness tool.
-8. Run 20–30 real tasks and collect local traces before installing RTK, hashline, todo or subagents.
-9. Build `pi-factory` v1 with typed phases/envelopes/gates, worktree/diff evidence, same-session correction, SQLite/JSONL run state and `inspect`, `plan`, `implement` workflows. Test it headlessly before adding UI.
-10. Add the Pi-native `/factory` commands and the two stable parent tools; prove pause/answer/cancel/crash recovery and atomic run acceptance.
-11. Add RTK, then hashline in `trusted-local`, one at a time. Keep the isolated router as sole owner until equivalent edit checks are merged into it.
-12. Add `@gotgenes/pi-subagents` plus worktrees, compiled profiles/task envelopes and explicit per-role models. Integrate them as factory adapters, not a second workflow owner; test child questions/approvals and containment.
-13. Add the parent-owned commit-finalization skill, changelog/documentation preparation and deterministic hooks as the factory's final code phases.
-14. Prototype Claude/Codex delegation through the trusted PTY and user `/spawn`; then build the tmux-backed attachable session/question broker and factory adapters only after useful routes are evident.
-15. Add lazy MCP and task-specific child exports. Keep native Pi Lens, CodeGraph and local CLIs from being duplicated through MCP.
-16. Establish Pi-native compaction baselines; add a coordinator or separate summary model only if continuity tests justify it.
-17. Trial Hermes memory, LeanCTX and server orchestration last, each in a separate evaluation profile.
+3. Install pinned permission-system, interactive shell and structured-question package; apply the ask-on-risk policy and test ordinary commands plus the PTY `sudo` flow. Build the privileged-command channel per ADR-037 and revoke the account's sudo when Phase 0 closes. Defer todo until long-task traces justify it.
+4. Add CodeGraph and native Pi Lens in conservative mode; connect the two-call RAG; wire repository-native checks. Prove the five routing questions.
+5. Build the shared `Executor` and `project_check`, and adopt it as this repository's only green.
+6. Build `pi-session-control`; freeze permissions/capabilities, filter unavailable commands/skills, and prove the cache-prefix invariants — including the regression gate — before adding any specialist.
+7. Run 20–30 real tasks and collect local traces. Every optimization decision after this point cites them; nothing before it does.
+8. Build `pi-factory` v1 with typed phases/envelopes/gates, worktree/diff evidence, same-session correction and SQLite/JSONL run state, plus the event stream with lineage IDs. Test it headlessly before adding UI.
+9. Add the Pi-native `/factory` commands and the two stable parent tools; add the parent-owned commit-finalization skill and deterministic hooks; prove pause/answer/cancel/crash recovery and atomic run acceptance. Execute one repository task end to end as a `self-dev` run.
+10. Add `@gotgenes/pi-subagents` plus worktrees, compiled profiles and task envelopes. Integrate them as factory adapters, not a second workflow owner.
+11. Build the local canonical MCP registry and lazy proxy, then the tmux-backed attachable session/question broker and the provider adapters in `12`. Generate every foreign launch's MCP export, tool restriction and prompt addendum from the registry, and measure the resulting prefix rather than assuming it.
+12. Close the parity gaps — web surface, image input, editor integration — build the portable session exporter, then run the dual-run period and decide the gate on run records (`11` §4).
+13. Only then: the remote service tier, reviewed memory, mission control, interfaces and packaged topology.
+14. Optimizations — shell-output compression, hashline, narrow LeanCTX, a separate summary model — are scheduled from the step 7 traces at whatever point those traces justify them, and from nowhere else.
 
-The exact starting stack is therefore: upstream Pi; permission-system; interactive shell; structured questions; CodeGraph; native Pi Lens with context injection/formatting/autofix disabled; `rg`/`ast-grep` and repository checks through Bash; one explicit RAG; and a separate audited Gondolin profile. The first custom component is `pi-session-control`, followed by the shared `Executor`/`project_check`, then `pi-factory`. Commit finalization becomes a factory code phase once checks are stable, and the attachable foreign-agent broker comes after useful delegation traces exist.
+The exact starting stack is therefore: upstream Pi; permission-system; interactive shell; structured questions; CodeGraph; native Pi Lens with context injection/formatting/autofix disabled; `rg`/`ast-grep` and repository checks through Bash; and one explicit RAG. The first custom components are the shared `Executor`/`project_check` and then `pi-session-control`, which must precede any specialist (ADR-006), followed by `pi-factory`. Commit finalization becomes a factory code phase once checks are stable. Foreign CLI workers arrive with the broker and the local registry, before the switch, because routing a phase to the best available model is a large part of what parity means.

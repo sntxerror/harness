@@ -53,6 +53,8 @@ required_files=(
   docs/08-persona-mission-control.md
   docs/09-topology-and-clients.md
   docs/10-context-and-cache-discipline.md
+  docs/11-execution-and-agentic-layers.md
+  docs/12-foreign-cli-workers.md
   schemas/AgentProfileV1.schema.json
   schemas/PortableSessionBundleV1.schema.json
   schemas/ProjectCheckResultV1.schema.json
@@ -69,7 +71,7 @@ for relative_path in "${required_files[@]}"; do
 done
 
 # Every roadmap version must have a task file, and vice versa.
-for version in V0.0 V0.1 V0.2 V0.3 V0.4 V0.5 V0.6 V0.7 V0.8 V1.0; do
+for version in V0.0 V0.1 V0.2 V0.3 V0.4 V0.5 V0.6 V0.7 V0.8 V0.9 V1.0; do
   if ! find "$bundle_root/tasks" -maxdepth 1 -name "${version}-*.md" -print -quit | grep -q .; then
     printf 'Task file missing for roadmap version: %s\n' "$version" >&2
     exit 1

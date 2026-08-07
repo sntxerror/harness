@@ -402,6 +402,90 @@ Evidence-critical hosted tools must return or be mirrored into locally inspectab
 
 The coordinator and workers share versioned APIs and artifacts, not one writable SQLite file or mutable prompt/skill directory. Candidate memories and self-improvement proposals require provenance, replay/evaluation, human review, versioned rollout and rollback.
 
+### ADR-040 — The system has two layers, and the execution layer is finished first
+
+**Status:** Accepted (August 2026); re-sequences the roadmap, changes no stage content
+
+The system is divided into an **execution layer** — everything that makes one task run well on one machine: session, permissions, code intelligence, validation, capability truth, context economy, workflow sequencing, commit finalization, delegation to children and to foreign CLIs, the local MCP registry and session portability — and an **agentic layer**: scheduling, unattended dispatch, cross-session durable knowledge, personas as schedulable identities, the mission board, remote interfaces and multi-runner placement. The execution layer is completed, used and measured before any agentic component starts. Full statement, including the boundary cases, is `11-execution-and-agentic-layers.md`.
+
+Two boundary cases are settled by this decision. A foreign CLI worker executing one phase of an already-scheduled run is **delegation, not orchestration**, and therefore belongs to the execution layer and ships before the switch. And **remote is a deployment property, not a capability**: every execution-layer component is complete when it works locally, so hosting the MCP registry, RAG or memory service on the existing server is deferred behind the switch and `docs/07` becomes a runbook consulted at that point rather than a Phase 0 obligation.
+
+**Reason:** the previous sequence put remote provisioning at V0.5 and delegation at V0.6, so months of work would have produced infrastructure rather than leverage, and at no point did the thing being built become better than the thing being used to build it. Separating "makes one task run well" from "makes many tasks run without a human" gives the first half a completion criterion and the second half a precondition.
+
+**Rejected:** treating server provisioning as foundational; building scheduling and cross-session memory before the harness could delegate a phase; a single undifferentiated stage list whose ordering implied nothing about value.
+
+### ADR-041 — The switch is a measured parity gate, per-workload and reversible
+
+**Status:** Accepted (August 2026); supersedes the "V0.4 is the switch point" claim in `ROADMAP.md` and `README.md`
+
+Daily development moves from VS Code plus Claude Code onto the harness at an explicit gate (V0.6), not when the harness can first commit its own changes. The gate has two halves: a **capability parity matrix** against the environment actually in daily use, and **measured criteria** over a dual-run period of at least ten working days — completion rate, post-acceptance correctness, median cost including foreign-worker spend, median latency, no silent stalls, crash recovery, and an export that lets an in-flight task continue in Claude Code. Thresholds and evidence are in `11` §4.
+
+The switch is declared **per workload class** — this repository, then other trusted repositories, then unfamiliar or risky code — and each declaration is reversible against a rollback condition stated in advance. Claude Code and Codex remain installed and remain legitimate workers of the system afterwards.
+
+Writing the matrix surfaced three capabilities used daily that the plan assigns to nobody: **web search and fetch, image input, and editor integration**. They are recorded as parity gaps with deadlines (D10–D12 in the open-decisions dossier), because a switch declared without them is a downgrade presented as progress.
+
+**Reason:** V0.4 makes the system self-hosting, which is a different property from being the better tool. A harness that can commit but cannot delegate, cannot reach the web and has no diff view is not one a reasonable person would switch to, and calling it the switch point guaranteed either a premature move or a quietly abandoned label.
+
+**Rejected:** declaring the switch from impression rather than from run records; an all-or-nothing switch across every workload; treating the previous environment as decommissioned rather than as a fallback and a worker.
+
+### ADR-042 — Foreign CLI harnesses are first-class factory workers with compiled provider profiles
+
+**Status:** Accepted (August 2026); promotes part of ADR-020 from prototype to execution-layer requirement
+
+`pi-factory` selects a worker per phase from compiled **provider profiles** binding task nature to binary, model, reasoning effort and access — `recon`, `sweep`, `implement`, `implement-hard`, `review`, `typed` (`12` §4). Profiles are compiled by policy from the phase spec; the model never passes one. Defaults are the cheap-but-capable tier (`gpt-5.6-luna`, `gemini-3.6-flash`, `claude-sonnet-5`) because gates catch what a cheaper model gets wrong and re-running a bounded phase costs less than paying frontier rates for every phase. Escalation to a stronger tier is a config change within the same adapter.
+
+The review profile names a different vendor from the implement profile: the existing reviewer-differs-from-implementer rule is worth more across vendors than across one family's models, and foreign workers are what make that affordable.
+
+The factory **spawns the official CLI as a local process**. It does not re-implement a provider client, proxy OAuth tokens, or wrap a subscription into a service — a design constraint, not a convenience, and the thing that keeps the arrangement inside the providers' terms (`12` §7).
+
+**Rejected:** foreign CLIs as a post-parity nicety; model choice made by the model; one provider for every phase; re-implementing provider clients to avoid spawning processes.
+
+### ADR-043 — Foreign workers are steered onto our capability surface by generated config, and the saving is measured
+
+**Status:** Accepted (August 2026)
+
+A vendor CLI arrives with its own search, file reading and web tools — in Claude Code's case roughly 24k tokens of tool definitions inside a ~33k-token prefix — for capabilities this system already owns better. Every foreign launch therefore receives a task-scoped MCP export from the canonical registry, an exclusive-MCP flag where one exists, removal of overlapping built-ins where the CLI permits it, the routing policy appended to its system prompt, and a deterministic hook denying the tools the phase must not use.
+
+A prompt addendum is a **request**; a hook is **enforcement**. Only the second survives a model that decides otherwise, and where no hook exists the restriction is reported as a preference rather than recorded as a control.
+
+Every adapter records the measured prefix cost, the exported server set, the tools removed and denied, token counts and the phase verdict into the event stream on every launch. A profile whose measured prefix does not improve on the stock CLI is recorded as not improving on it. Two known upstream defects mean the intent cannot be assumed to hold: `--disallowedTools` does not affect MCP tools in Claude Code's print mode, and its built-in MCP servers cannot be removed from context at all (R-093, R-094).
+
+**Reason:** a foreign worker's context is entirely outside our cache accounting, which makes it the one place where an unmeasured claim of saving could persist indefinitely. ADR-035 already rejects estimating savings without traces; this extends the same rule across the process boundary.
+
+**Rejected:** accepting vendor defaults; hand-maintained per-provider configs instead of registry-generated exports; asserting a token saving from a config change without counting the prefix; treating prompt instructions as enforcement.
+
+### ADR-044 — Control-channel preference for foreign workers: structured headless, then ACP, then PTY
+
+**Status:** Accepted (August 2026); amends the adapter list in `docs/01` §10.2
+
+An adapter uses the highest available rank: (1) native headless structured output, (2) ACP where the CLI ships or has a maintained adapter, (3) PTY with sentinel detection. Codex CLI's `codex exec --json` with `--output-schema` supplies the typed-envelope contract directly and makes it the default worker for batch and schema-constrained phases and the reference implementation for the others. PTY prompt detection by silence or terminal text remains a fallback, never a correctness mechanism.
+
+ACP moves up from `ACPAdapter (later)` because its adoption changed: Zed 1.0 shipped it on 29 April 2026 with Claude Code, Codex, Gemini CLI and OpenCode in-editor, JetBrains shipped support in December 2025, and the ACP Agent Registry launched 28 January 2026. Anthropic has not adopted it natively — Claude Code reaches ACP through a Zed-maintained bridge — so ACP is evaluated per provider rather than adopted universally.
+
+The same protocol is the cheapest available answer to the editor-integration parity gap in the opposite direction: `pi-acp` exposes Pi itself as an ACP agent over stdio, making the harness drivable from Zed, JetBrains or a VS Code ACP client without building an extension. That remains an open decision (D12), not a commitment — the package is at 0.0.33.
+
+**Rejected:** PTY scraping where a structured channel exists; adopting ACP universally on adoption numbers alone; building an ACP client for a provider whose headless path already satisfies the contract.
+
+### ADR-045 — CodeGraph is one engine with per-session single surfaces, not one interface
+
+**Status:** Accepted (August 2026); refines ADR-008 and corrects the blanket "never duplicate through MCP" phrasing in `docs/01`
+
+ADR-008's rule was written as "CodeGraph is the single relationship graph; do not expose it again through MCP." Read literally that forbids a foreign CLI worker from ever seeing the graph, which contradicts both the reason foreign workers exist and the pattern this plan already applies to Pi Lens one section earlier. The rule conflated three separate invariants; they are now stated separately, and only the second and third were ever about interfaces.
+
+1. **One index and one daemon per repository.** CodeGraph stores a per-project SQLite/FTS5/WAL graph at `.codegraph/codegraph.db` and shares **one background server across sessions over a local socket**, with one debounced OS-level watcher. Concurrent clients attach to that server; they do not each build an index. The harm ADR-008 names — duplicate indexes, duplicate watchers, conflicting schemas — is what a *second graph engine* causes, not what a second *consumer* of this one causes.
+2. **One graph surface per session.** A session sees exactly one CodeGraph interface. Pi uses the native bridge or the MCP proxy, never both; a foreign worker receives one exported server and never a second. Two schemas for one capability in one prefix is a context and ambiguity cost, and that is the invariant worth keeping.
+3. **One authority for graph questions.** CodeGraph answers architecture, callers, callees, dependencies and blast radius. No GitNexus, no second graph, no code-focused RAG. Unchanged from ADR-008.
+
+Consequently **graph access is a per-profile grant, not a property of the process that asks**. Pi's parent and its native children receive the graph through the Pi-native surface; a foreign worker receives the CodeGraph MCP server in its generated export when its phase needs the graph, exactly as `docs/01` §3.2 already permits for the Pi Lens MCP mirror — that mirror exists precisely for hosts lacking the native lifecycle integration, which is what a foreign CLI is.
+
+Which Pi-native surface is used is a **measured** choice, not a stated one. `@vndv/pi-codegraph` registers eight named tools (`codegraph_search`, `_node`, `_files`, `_callers`, `_callees`, `_impact`, `_explore`, `_status`), each proxying one request to `codegraph serve --mcp`; the engine's own MCP surface defaults to a single `codegraph_explore` tool with the rest opt-in via `CODEGRAPH_MCP_TOOLS`. Eight schemas in the frozen prefix against one is a real cost, and the named operations map onto the routing policy in a way one general tool does not. The capability compiler decides from the measured prefix cost and the routing traces, not from preference.
+
+The bridge is a thin proxy over the engine's MCP server and does not run its own watcher or index, which makes its failure mode cheap: if it lags the engine or is abandoned, CodeGraph is consumed through the lazy MCP proxy we already own, with no change to invariants 1–3 and no code to write (R-103).
+
+**Reason:** the graph is the coding foundation, so restricting it to one process class would make every delegated phase structurally weaker at exactly the work worth delegating — a reviewer that cannot see blast radius is reviewing text. The engine's daemon-and-socket design already provides the property the blanket rule was trying to protect, so the rule cost capability and bought nothing.
+
+**Rejected:** a second graph engine of any kind; two graph surfaces inside one session; a per-worker CodeGraph index or watcher; graph access as an ambient property of any agent rather than a declared profile grant; keeping the blanket MCP prohibition now that its stated harm is known not to occur.
+
 ## Superseded directions
 
 | Earlier direction | Why it changed | Current decision |
@@ -420,3 +504,9 @@ The coordinator and workers share versioned APIs and artifacts, not one writable
 | Use SSSF as the production orchestrator | Its pattern is strong but the current project is very young and omits sandbox, worktrees, merge and human interaction | Reuse the pattern inside our stronger profiles/executor/broker architecture |
 | Treat Pi JSONL alone as a complete cross-harness export | It omits effective prompt/tool/profile contents and external evidence/artifacts | Native JSONL for Pi; `PortableSessionBundleV1` for provider-neutral continuation and audit |
 | Use Hermes as both memory and workflow/session state | It would duplicate RAG, compaction and `pi-factory` and make causality unclear | `Hermes Memory Service` first; optional `Hermes Coordinator` later with strict ownership |
+| Remote service tier before delegation | Hosting location adds no capability; it blocked the work that actually closes the gap with the current environment | Execution layer local and complete first; the server hosts services after the switch (ADR-040) |
+| V0.4 is the switch point because the system can commit | Self-hosting and being the better tool are different properties; a harness with no delegation, web access or diff view is not one to switch to | Measured parity gate at V0.6, per workload, reversible (ADR-041) |
+| Foreign CLIs as a late delegation nicety | Routing a phase to the best available model is a large part of parity, and the review-differs-from-implementer rule is worth most across vendors | Compiled provider profiles in the execution layer, before the switch (ADR-042) |
+| Foreign harnesses accept vendor defaults | A vendor CLI re-derives with its own tools what this system already owns better, at a measured ~33k-token prefix | Registry-generated MCP exports, tool removal, hook enforcement, measured prefix (ADR-043) |
+| PTY adapters first, ACP later | ACP adoption changed and Codex's headless JSON already satisfies the envelope contract without either | Structured headless, then ACP, then PTY (ADR-044) |
+| CodeGraph must never be exposed through MCP | The stated harm is caused by a second engine, not a second consumer; the engine shares one daemon and one watcher across sessions by design | One index and one daemon; one graph surface per session; graph access as a per-profile grant (ADR-045) |

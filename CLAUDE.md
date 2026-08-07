@@ -36,7 +36,7 @@ Corollary: do not fix a doc/code disagreement by editing the code to match a sta
 - Work is expressed as tasks in `tasks/V0.x-*.md` with an ID (`V0.x-Ty`), type, dependencies and acceptance criteria.
 - Check a box only when its stated acceptance criterion is demonstrably met — not when the work "looks done". If a criterion turns out to be wrong, change the criterion explicitly in the same commit.
 - Adding a task is normal and preferred over silently widening an existing one.
-- From V0.7 the mission board replaces these files as tracker of record; until then the checkboxes are authoritative.
+- From V0.8 the mission board replaces these files as tracker of record; until then the checkboxes are authoritative.
 
 ## Git
 

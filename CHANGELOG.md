@@ -1,5 +1,46 @@
 # Bundle Changelog
 
+## 7 August 2026 (two-layer re-sequencing and the switch gate)
+
+- Added ADR-040: the system has an execution layer and an agentic layer, and the execution layer is
+  completed, used and measured before any agentic component starts. Settled the two boundary cases —
+  a foreign CLI worker executing one phase is delegation, not orchestration; and remote is a
+  deployment property, not a capability.
+- Added ADR-041: the move off VS Code plus Claude Code is a measured parity gate at V0.6, declared
+  per workload class and reversible — not the moment the system can first commit its own changes.
+  Rejected declaring the switch from impression rather than from run records.
+- Added ADR-042/043: foreign CLI harnesses are execution-layer workers with compiled provider
+  profiles (`recon`, `sweep`, `implement`, `implement-hard`, `review`, `typed`) and cheap-but-capable
+  defaults, steered onto our capability surface by registry-generated MCP exports, tool removal,
+  prompt addenda and hook enforcement — with the prefix measured on every launch, never assumed.
+- Added ADR-044: control-channel preference for foreign workers is structured headless output, then
+  ACP, then PTY. Codex's `codex exec --json --output-schema` supplies the typed-envelope contract
+  directly and becomes the reference adapter; `AcpAdapter` loses its "later" marking.
+- Added `docs/11-execution-and-agentic-layers.md` and `docs/12-foreign-cli-workers.md`.
+- **Found three parity gaps the plan assigned to nobody:** web search and fetch, image input, and
+  editor integration — all used daily in the current environment (R-097, R-098, decisions D10–D12).
+- Added the open-decisions dossier: nineteen entries with evidence resolved 7 August 2026, costed
+  options and the single observation that would settle each, ordered by the version it blocks.
+- Re-sequenced the roadmap: remote services V0.5 → V0.7, delegation and foreign workers V0.6 → V0.5,
+  portability and the parity gate → V0.6, mission control → V0.8, interfaces → V0.9. Rewrote the
+  task files; no checked box moved.
+- Added ADR-045, resolving the CodeGraph contradiction: the engine shares one background server and
+  one watcher across sessions over a local socket, so duplicate indexes and watchers are caused by a
+  second *engine*, never by a second *consumer*. The blanket "never expose CodeGraph through MCP"
+  rule is replaced by three invariants — one index and one daemon per repository, one graph surface
+  per session, one authority for graph questions — and graph access becomes a declared profile
+  grant, so a foreign worker whose phase needs architecture receives the MCP server exactly as the
+  plan already permitted for the Pi Lens mirror. Rejected restricting the graph to Pi processes.
+- Recorded what that clarified: a foreign CLI is worth spawning for the vendor's *harness*, not its
+  model, since a native Pi child can already be routed to another vendor's model by `modelClass` and
+  keeps the full capability surface with no vendor prefix (`12` §4.1).
+- Left one measured sub-choice open at V0.2 (V0.2-T7): the bridge's eight named graph tools against
+  the engine's single `codegraph_explore` — eight schemas in the frozen prefix against one.
+- Added R-093 to R-104, covering Claude Code's unenforceable MCP tool restriction under `-p` and its
+  irreducible ~33k-token prefix, Antigravity's non-TTY hang, the subscription-automation boundary,
+  the two parity gaps, gate-by-impression, foreign-worker concurrency cost, provider CLI drift and
+  the risk that deferring isolation becomes permanent omission.
+
 ## 7 August 2026 (pin policy)
 
 - Added ADR-039: packages resolve to their latest published version at install or refresh. A version

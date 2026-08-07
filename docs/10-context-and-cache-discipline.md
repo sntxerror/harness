@@ -129,9 +129,9 @@ Enough to make correct decisions; exact figures are provider- and model-specific
 | --- | --- |
 | V0.3 | `pi-session-control` freezes and hashes zone A; `pi-cache-contract` implements §5.1 with `/cache-status`; measured startup budget per §5.3; manifest records whether §4 preserving channels exist for the pinned model |
 | V0.4 | Event stream carries `cache_epoch`, `prefix_hash`, `cache_read_tokens`, `cache_write_tokens`, `uncached_input_tokens` alongside the lineage IDs; Executor and factory phases respect §3 breakpoint placement and §7 fan-out ordering |
-| V0.5 | MCP proxy schema is hash-stable across server discovery; the Stage 11 token-cost gate is measured against §5.2 counters |
-| V0.6 | Session transfer is an explicit epoch boundary; `PortableSessionBundleV1` records the source epoch and never claims cache continuity across providers (`06` §"do not preserve the old provider's prompt cache") |
-| V0.7 | Mission board and lease state are control-plane data; they reach a model only through a bounded tool result, never through per-turn injection |
+| V0.5 | MCP proxy schema is hash-stable across server discovery; the Stage 11 token-cost gate is measured against §5.2 counters; every foreign worker's prefix is measured per launch and recorded as its own event field, because that context is outside our own accounting entirely (ADR-043) |
+| V0.6 | Session transfer is an explicit epoch boundary; `PortableSessionBundleV1` records the source epoch and never claims cache continuity across providers (`06` §"do not preserve the old provider's prompt cache"); the parity gate's cost threshold is computed from these counters, not estimated |
+| V0.8 | Mission board and lease state are control-plane data; they reach a model only through a bounded tool result, never through per-turn injection |
 
 ## 9. Review checklist
 

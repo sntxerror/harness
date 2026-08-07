@@ -54,8 +54,8 @@ The web UI (persona editor, mission control) and the IM gateway are authority su
 
 ## 7. Bootstrap deployment path
 
-1. **Local-first:** control-plane services begin as local processes on the development machine alongside the harness (SQLite event store, file-based registries).
-2. **Remote services wave 1:** the existing remote server first hosts the stateless/service tier — MCP lazy proxy + canonical registry, RAG service, memory service — consumed by the local runner over SSH/private overlay. No public ports (07-runbook rules apply).
-3. **Packaged control plane:** control plane and runner images become containerized (compose/systemd per 07), the forge is added, and the workstation re-registers as a peer runner of the server-resident control plane.
+1. **Local-first (V0.1–V0.6):** control-plane services begin as local processes on the development machine alongside the harness (SQLite event store, file-based registries). The MCP registry and lazy proxy are built here, locally, because foreign CLI workers need a generated `.mcp.json` before any server exists (ADR-040).
+2. **Remote services wave 1 (V0.7, after the switch):** the existing remote server hosts the stateless/service tier — MCP lazy proxy + canonical registry, RAG service, memory service — consumed by the local runner over SSH/private overlay. No public ports (07-runbook rules apply). This wave relocates processes; it adds no capability, which is why it follows the parity gate rather than preceding it.
+3. **Packaged control plane (V1.0):** control plane and runner images become containerized (compose/systemd per 07), the forge is added, and the workstation re-registers as a peer runner of the server-resident control plane.
 
 The self-development repo follows gitflow (`main` = released versions, `develop` = integration, feature branches per task) and syncs with a private GitHub remote; the forge joins at packaging time and GitHub remains a mirror or is retired by explicit decision.

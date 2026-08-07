@@ -20,13 +20,16 @@ This documentation set separates current implementation authority from history, 
 | `08-persona-mission-control.md` | Authoritative design supplement | Personas, missions, capability assignment pipeline, memory scopes, leases, lifecycle statecharts, observability event contract |
 | `09-topology-and-clients.md` | Authoritative design supplement | Control plane/runners/clients topology, placement policy, session transfer, viewing layers (forge/IDE/web UI), A2A interop stance |
 | `10-context-and-cache-discipline.md` | Authoritative mechanism | Request zones, breakpoint placement, append-only mutation channels, cache verification and the per-version obligations implementing ADR-007 |
-| `reviews/` | Point-in-time findings | Dated verification of a subsystem against the bundle and external experience; records findings, changes nothing |
+| `11-execution-and-agentic-layers.md` | Authoritative sequencing | The line between execution and agentic layers, what "the execution layer is finished" means, the parity matrix and the measured switch gate |
+| `12-foreign-cli-workers.md` | Authoritative design supplement | Claude Code / Codex / Antigravity control surfaces, compiled provider profiles and model defaults, steering foreign workers onto our capability surface, and the measurement obligation |
+| `reviews/` | Point-in-time findings | Dated verification of a subsystem against the bundle and external experience; records findings, changes nothing. Includes the open-decisions dossier, which collects evidence and options for every decision not yet taken |
 | `archive/` | Frozen, non-authoritative | Imported predecessor material (earlier plans, critiques, experiments) kept verbatim for provenance. Never edited, never linted, never cited as authority — if something in it still matters, restate it in an authoritative document |
 
 ## Reading order
 
+0. Read `11` first: it says which half of the system is being built now and what "finished" means for it. Every other document describes the whole design and is easy to mistake for a work queue.
 1. Read the architecture decisions to understand the intended system.
-2. Use the ordered plan to implement one stage at a time.
+2. Use the ordered plan to implement one stage at a time; its layer map says which version claims which stage.
 3. Check the risk register before promoting any stage.
 4. Read the closed-loop supplement before implementing workflow orchestration.
 5. Read the portability specification before building any cross-provider/foreign-session handoff.
@@ -46,6 +49,10 @@ This documentation set separates current implementation authority from history, 
 
 ## Current high-confidence direction
 
+- The system has two layers. The **execution layer** — session, permissions, code intelligence, validation, capability truth, context economy, workflow sequencing, commit finalization, delegation to children and foreign CLIs, the local MCP registry and portable export — is local, is built first, and is finished before any agentic component starts (ADR-040).
+- **Remote is a deployment property, not a capability.** Hosting the registry, RAG or memory service on the server changes where a process runs and nothing about what the harness can do, so it follows the switch rather than preceding it.
+- The move off VS Code plus Claude Code is a **measured parity gate at V0.6**, declared per workload class and reversible, not the moment the system can first commit its own changes (ADR-041, `11` §4).
+- Foreign CLI workers are **execution-layer components with compiled provider profiles** and cheap-but-capable defaults; they are steered onto our capability surface by registry-generated config, and the saving is measured per launch rather than assumed (ADR-042/043, `12`).
 - Upstream Pi is the main terminal execution harness and one frontend in a broader Agent OS.
 - Trusted and isolated profiles are physically separate; containment, permissions and cache-critical configuration are frozen for a session.
 - Mid-session change is append-only: operator instructions arrive as `system`-role messages and capabilities as additive tool loads; the prefix is never edited, and conformance is hash-verified rather than assumed (ADR-034/035, `10`).

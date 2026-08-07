@@ -6,11 +6,27 @@ Updated: 7 August 2026. Replace this file's contents at the end of each working 
 
 **Ask before implementing any decision recorded in `docs/` (ADR-036).** The documents are authority over *what was decided*, never permission to do it now. Present the decision, where it is recorded, what it commits us to and what it rules out — then wait. Approval is per decision and does not carry to the next phase or a later re-run. Runbook command blocks are reviewed content, not scripts to run on sight. Full statement in `CLAUDE.md`.
 
+## The plan was re-sequenced on 7 August 2026
+
+The roadmap now follows a two-layer split (ADR-040). The **execution layer** — everything that makes one task run well on one local machine — is V0.1 through V0.6 and is built, used and measured before any **agentic layer** component starts. Remote hosting moved behind the switch because it adds no capability; delegation and foreign CLI workers moved forward because they add most of what parity means.
+
+Three documents carry it: `docs/11` (the layer line, the parity matrix, the measured switch gate), `docs/12` (Claude Code / Codex / Antigravity control surfaces, compiled provider profiles, how a foreign worker is steered onto our tools) and `docs/reviews/2026-08-07-open-decisions-dossier.md` (nineteen open decisions with evidence, options and what would settle each).
+
+**V0.4 is no longer "the switch point".** It is where self-hosting starts. The switch is a separate measured gate at V0.6 — a capability matrix plus a ten-day dual run against VS Code and Claude Code, declared per workload class and reversible (ADR-041). Writing that matrix surfaced three capabilities used daily that the plan assigned to nobody: **web search and fetch, image input, and editor integration** (D10–D12, R-097/R-098). They are the substantive finding of the revision.
+
+Version renumbering: old V0.5 (remote services) → V0.7, old V0.6 (delegation) → V0.5 with portability split into V0.6, old V0.7 (mission control) → V0.8, old V0.8 (interfaces) → V0.9. Task files were rewritten accordingly; no checked box moved.
+
 ## Where the project stands
 
 **V0.0 is closed and tagged.** The closeout branch merged through `develop` to `main`; `v0.0` is tagged and `main`, `develop` and the tag are pushed. Both gates were clean before and after.
 
 **V0.1 (baseline interactive harness) is the current version.** T4 is done; T1 and T2 are partially done on the server. Branch `feature/V0.1-T4-package-pin-inspection` holds the T4 review and is **committed locally but not pushed and not merged** — V0.1 has open boxes, so nothing merges yet.
+
+## Remote server — no longer on the critical path
+
+The server work below is now **V0.7**, after the switch. Nothing in V0.1–V0.6 depends on it, and the Phase 0 steps listed here are paused rather than pending — with one exception that is not optional: the harness account's sudo revocation remains a **V0.1 exit condition** (ADR-038), because a time-boxed privilege that outlives its phase is exactly the failure R-090 records.
+
+The state below is recorded as it stands so that resuming V0.7 does not require rediscovering it.
 
 ## Remote server — actual state right now
 
@@ -87,17 +103,26 @@ Sudo stays for Phase 0, confined to that channel, and is revoked as a **V0.1 exi
 
 New work: **V0.1-T8** builds the channel; T7's battery gains its four probes.
 
-**Two decisions remain open (ADR-036):** adapter placement for `UserQuestionV1` and whether `description`/`preview` extend the schema; and whether `@juicesharp/rpiv-config` and `@juicesharp/rpiv-i18n` are accepted uninspected. The pin question that stood here is settled by ADR-039 above.
+**Open decisions are now collected in one place:** `docs/reviews/2026-08-07-open-decisions-dossier.md`, nineteen entries ordered by the version each one blocks, every entry stating what is undecided, what was found on 7 August 2026, what the options cost and the single observation that would settle it. The four that block V0.1 are the provider route for the parent model (D1), the parent's model class (D2), `UserQuestionV1` adapter placement (D3), and whether the two uninspected RPIV dependencies are accepted (D4). D4 is cheaper to settle than to decide — it is two tarball reads.
 
-Two pre-existing defects in `docs/02` are flagged but untouched: ADR-028 and ADR-029 each appear twice (lines 245/253 and 337/353), and the prose following ADR-036 belongs to a factory/workflow ADR rather than to ADR-036. Renumbering would break cross-references.
+The two pre-existing defects in `docs/02` are still flagged and still untouched: ADR-028 and ADR-029 each appear twice, and the prose following ADR-036 belongs to a factory/workflow ADR. They are now decision D19 with three costed options rather than a standing note.
 
-## Environment notes
+## Workstation — actual state, surveyed 7 August 2026
 
-- Workstation repo `/home/sntx/RND/harness`; frozen predecessor bundle in `/home/sntx/RND/archive` (read-only reference).
-- Workstation has `jq`, `python3`, `node v24`, `npx`; no `rg`/`fd` — scripts are kept dependency-light rather than requiring them.
+This is now the machine that matters; the full table with consequences is in `tasks/V0.1-baseline-harness.md`.
+
+- **Pi 0.80.10** at `~/.config/nvm/versions/node/v24.18.0/bin/pi`, against **0.84.1** upstream. V0.1-T2 is an upgrade decision across four minors, not a confirmation.
+- **`~/.pi` is live** — `auth.json`, sessions, extensions, `models-store.json`, `trust.json` — and already carries `npm:pi-interactive-shell` unpinned in the default agent dir. Stage 0.1's backup is mandatory before any profile work.
+- Provider default is **`openrouter` / `openrouter/free`**, thinking `high`. This bears on D1: the workstation is already authenticated to OpenRouter, while the server verified the direct `openai-codex` route.
+- **All three foreign CLIs are already installed**: `claude` 2.1.210, `codex-cli` 0.145.0, `agy` 1.1.4. V0.5 needs no provisioning and the V0.6 parity comparison is directly runnable.
+- `node` v24.18.0, `npm` 11.16.0, `jq`, `tmux`, `docker` present. `ast-grep`, `codegraph` and `podman` absent — V0.2 and V0.7 inputs, not V0.1 blockers.
+- **`rg` is a shell function**, not a binary — `ripgrep` 14.1.1 is installed but `command -v rg` fails in a non-interactive executor. This is R-003 reproduced on the machine before any of our code exists, and it is the reference case for V0.3-T2. The earlier note in this file claiming no ripgrep was wrong; scripts stay dependency-light regardless.
+- Repo at `/home/sntx/RND/harness`; frozen predecessor bundle in `/home/sntx/RND/archive` (read-only reference).
 - Remote is a private GitHub repository; `main` and `develop` pushed. The harness repo is **not** cloned on the server.
 - No CI. The verification commands above are run by hand; the first real gate is the cache regression test (V0.3-T9).
 
 ## Reading order for a fresh session
 
-`CLAUDE.md` → `docs/00-documentation-index.md` → `docs/02-architecture-decisions.md` → `ROADMAP.md` → the current task file. Add `docs/10` before touching prompt assembly, tool registration, retrieval or history; `docs/07` before anything on the server; `docs/08`/`09` before personas, missions or topology.
+`CLAUDE.md` → `docs/11-execution-and-agentic-layers.md` → `docs/00-documentation-index.md` → `docs/02-architecture-decisions.md` → `ROADMAP.md` → the current task file. `docs/11` comes early on purpose: every other document describes the whole design and is easy to mistake for a work queue.
+
+Add `docs/10` before touching prompt assembly, tool registration, retrieval or history; `docs/12` before anything involving Claude Code, Codex or Antigravity as workers; the open-decisions dossier before proposing a decision that may already be costed there; `docs/07` before anything on the server; `docs/08`/`09` before personas, missions or topology.
