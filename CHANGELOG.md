@@ -1,5 +1,18 @@
 # Bundle Changelog
 
+## 7 August 2026 (pin policy)
+
+- Added ADR-039: packages resolve to their latest published version at install or refresh. A version
+  in a document is evidence of a past resolution, never a target — the exact *resolved* version and
+  hash are what get recorded, because the cache epoch and `SessionCompatibilityV1` are computed over
+  them. Rejected genuinely floating ranges, which would make the manifest hash unreproducible.
+- Re-resolved every pin carried in `docs/` on 7 August 2026: permission-system 20.9.1 → 24.0.0,
+  interactive-shell 0.13.0 → 0.14.0, subagents 18.1.0 → 19.2.1, pi-lens 3.8.71 → 3.8.74, pi-sandbox
+  0.5.0 → 0.6.2. Confirmed already-latest: subagents-worktrees 0.2.3, pi-container-sandbox 0.2.2,
+  vmpi 0.4.1, @nqbao/pi-sandbox 0.1.3, pi-handoff-agent 0.2.0, rpiv-ask-user-question 2.4.0.
+- Amended the pin rule in `CLAUDE.md` and rewrote R-050's mitigation; added R-092 (a version read as
+  a decision rather than as evidence).
+
 ## 7 August 2026 (privileged-command channel)
 
 - Added ADR-037: privileged commands have exactly one channel — `interactive_shell` in

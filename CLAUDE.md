@@ -66,5 +66,5 @@ The documents are dense and declarative on purpose: each states a decision, its 
 
 - **`REPLACE_` placeholders are intentional.** Never "fix" one to make a check pass; `validate-bundle.sh` counts them deliberately. Resolution happens in a profile-specific copy at point of use (`tasks/V0.0` §T6).
 - **One owner per responsibility.** Before adding any tool, package or index, find the existing owner in `docs/01` (Outcome table) and `docs/03` (overlap table). A duplicate needs a measured advantage, not a plausible one.
-- **Pins are exact and reviewed.** Upgrading a pinned package is a task with inspection notes, not a routine bump (R-050).
+- **Take latest; record exactly what you got.** Packages resolve to their latest published version at install or refresh — a number in a document is evidence of a past resolution, never a target to reproduce. What must be exact is the resolved version and hash written into the lockfile and manifest, because the cache epoch and `SessionCompatibilityV1` are computed over them (ADR-039, R-050).
 - **Placeholder checks that always pass are worse than no check** (R-057). Omit the entry instead.

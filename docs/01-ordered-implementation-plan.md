@@ -262,13 +262,13 @@ Permissions, the PTY and structured questions are baseline features. A dedicated
 
 ### 2.1 Install one permission authority and one PTY
 
-Pin the versions verified during implementation, then upgrade deliberately:
+Every version in this document was resolved from the registry on **7 August 2026** and records what was latest that day, not a target to reproduce. Re-resolve to latest whenever you install or refresh, and record what you actually got (ADR-039). The permission system and the interactive shell below were additionally inspected at these versions — `docs/reviews/2026-08-06-v0.1-t4-package-pin-inspection.md`.
 
 ```bash
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:@gotgenes/pi-permission-system@20.9.1
+  pi install npm:@gotgenes/pi-permission-system@24.0.0
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:pi-interactive-shell@0.13.0
+  pi install npm:pi-interactive-shell@0.14.0
 ```
 
 Create the permission-system `config.json` in the package's installed extension directory for this profile. Start with “allow ordinary work, ask on risky actions, deny nothing explicitly”:
@@ -417,7 +417,7 @@ Install only host-safe UI/policy packages in the isolated profile—no interacti
 
 ```bash
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/isolated" \
-  pi install npm:@gotgenes/pi-permission-system@20.9.1
+  pi install npm:@gotgenes/pi-permission-system@24.0.0
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/isolated" \
   pi install npm:@juicesharp/rpiv-ask-user-question
 ```
@@ -494,7 +494,7 @@ With host Pi plus the Gondolin extension, extension code still runs on the host.
 | Audited Gondolin Pi router | Balanced local isolation while keeping provider auth/UI on host | Hardware VM; mediated filesystem/network/secrets; preserves built-in schemas | Other host extensions are not contained; Alpine/custom-image work; RW mount remains destructible | Recommended `isolated-local` after the fork is tested |
 | `@the-agency/vmpi@0.4.1` | Whole Pi and all extensions inside a local Gondolin VM | Coherent boundary, full PTY, network allowlist, fast checkpoint resume | Young; Linux-tested; older Gondolin dependency; mounts host `~/.pi` read-only, so audit auth exposure; image must contain all extensions/CLIs | Strong trial for `whole-sandbox`, not automatic promotion |
 | `@nqbao/pi-sandbox@0.1.3` | Lightweight daily Linux/macOS containment | Bubblewrap or `sandbox-exec`; little VM overhead; fails closed without backend | Young; custom host extensions still bypass it; weaker boundary than a VM | Optional alternative when QEMU cost is unacceptable |
-| `pi-sandbox@0.5.0` | Standalone policy experiment | Prompts on unknown domains/paths | Duplicates permission-system prompts and policy; inspected coverage is not a clean fit | Do not combine with this stack |
+| `pi-sandbox@0.6.2` | Standalone policy experiment | Prompts on unknown domains/paths | Duplicates permission-system prompts and policy; inspected coverage is not a clean fit | Do not combine with this stack |
 | `pi-container-sandbox@0.2.2` | Disposable experiment | Familiar Docker/Apple-container model | Inspected version overrides only `read`/`write`/`edit`/`bash`; current `grep`/`find`/`ls` can remain host | Avoid until all built-ins are covered |
 | Rootless Docker/Podman | Simple whole-process fallback | Mature, transparent, all extension code inside | Provider credentials/config enter container unless proxied; coarser policy | Good fallback |
 | NVIDIA OpenShell | Remote/server or maximum-policy worker | Whole-process FS/process/network/credential/inference policy; Pi image available | Gateway and policy administration; still rapidly evolving | Preferred future server evaluation |
@@ -618,7 +618,7 @@ The chosen native integration is Pi Lens, not Pi Lens MCP and not a second stand
 
 ```bash
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:pi-lens@3.8.71
+  pi install npm:pi-lens@3.8.74
 ```
 
 Pin the version reviewed during implementation; the package is active and changes quickly. Start in conservative, cache-clean mode at `~/.pi-lens/config.json`:
@@ -1046,7 +1046,7 @@ Do not load the stock hashline extension with the stock Gondolin extension: both
 
 ```bash
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:@gotgenes/pi-subagents@18.1.0
+  pi install npm:@gotgenes/pi-subagents@19.2.1
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
   pi install npm:@gotgenes/pi-subagents-worktrees@0.2.3
 ```
@@ -1058,7 +1058,7 @@ Confirm package order in the trusted profile's `settings.json`:
 ```json
 {
   "packages": [
-    "npm:@gotgenes/pi-subagents@18.1.0",
+    "npm:@gotgenes/pi-subagents@19.2.1",
     "npm:@gotgenes/pi-subagents-worktrees@0.2.3"
   ]
 }
@@ -1891,11 +1891,11 @@ experience
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 npm install -g @colbymchenry/codegraph
 
-pi install npm:@gotgenes/pi-permission-system@20.9.1
-pi install npm:pi-interactive-shell@0.13.0
+pi install npm:@gotgenes/pi-permission-system@24.0.0
+pi install npm:pi-interactive-shell@0.14.0
 pi install npm:@juicesharp/rpiv-ask-user-question
 pi install npm:@vndv/pi-codegraph
-pi install npm:pi-lens@3.8.71
+pi install npm:pi-lens@3.8.74
 ```
 
 These commands target `trusted-local`; prepend its `PI_CODING_AGENT_DIR` in real launch/install scripts. Build the `isolated-local` directory from the reviewed official Gondolin example separately and do not copy host-only LSP/PTY/edit extensions into it.
@@ -1907,7 +1907,7 @@ These commands target `trusted-local`; prepend its `PI_CODING_AGENT_DIR` in real
 rtk init --agent pi
 
 pi install npm:pi-hashline-edit-pro       # trusted-local only, after trial
-pi install npm:@gotgenes/pi-subagents@18.1.0
+pi install npm:@gotgenes/pi-subagents@19.2.1
 pi install npm:@gotgenes/pi-subagents-worktrees@0.2.3
 pi install npm:pi-mcp-adapter
 ```

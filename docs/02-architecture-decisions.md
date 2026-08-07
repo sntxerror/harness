@@ -352,6 +352,20 @@ After revocation, privileged host work happens in an operator terminal outside t
 
 **Rejected:** permanent sudo for the harness account; granting `piops` sudo under any condition; treating the ADR-037 guard as a substitute for the containment boundary; leaving revocation as an untracked intention rather than a checked exit condition.
 
+### ADR-039 — Pins resolve to latest at refresh time; a version in prose is never authority
+
+**Status:** Accepted (August 2026); amends the pin rule in ADR-006 and `CLAUDE.md`
+
+Every Pi extension, package and plugin is taken at its latest published version whenever it is installed or deliberately refreshed. A version number written in these documents records what was resolved on a given date; it is evidence, never a target, and a stale one is not a reason to install an older release. Refreshing to latest is the default action and needs no separate justification.
+
+What stays exact is the *resolved* version. Installation resolves latest, then records the exact version and integrity hash into the profile lockfile and the session manifest, and that recorded value is what the running system uses until the next refresh. Between refreshes the profile does not float: a session that resolved a version keeps it, because `SessionCompatibilityV1` and the cache epoch are computed over package identity and a version that changes underneath a live profile invalidates both silently.
+
+Refresh is therefore a deliberate act with a date, not a background process. It re-runs the profile's smoke suite before promotion, and for anything that carries policy semantics — the permission system above all — it re-reads the behaviours we depend on, since a major bump can move them without breaking a signature.
+
+**Reason:** the previous rule optimized for stability and produced staleness instead. The pins carried in `docs/01` had drifted several majors behind by the time anyone tried to install them, and treating those numbers as decisions meant reproducing a months-old environment for no stated benefit. The real requirement was never an old version — it was knowing exactly which version is running and being able to reproduce it.
+
+**Rejected:** installing a version because a document mentions it; genuinely floating ranges resolved per install, which make the manifest hash unreproducible and let permission semantics change mid-session; background auto-update; treating a routine refresh as needing operator approval when the profile's smoke suite covers it.
+
 Workflow state is durable outside model context. A run must resume from manifests, envelopes, evidence and repository state even if every model session is discarded. Pi-native compaction remains local to each Pi child conversation.
 
 The first named workflows are `inspect`, `plan`, `implement`, `research`, `release` and `incident`. Known invocations are deterministic code phases using the authoritative `Executor`; they are never rediscovered by a tester agent. Phase execution success and run acceptance are separate recorded facts.

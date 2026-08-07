@@ -151,10 +151,10 @@ Install only the baseline packages into the trusted profile:
 
 ```bash
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:@gotgenes/pi-permission-system@20.9.1
+  pi install npm:@gotgenes/pi-permission-system@24.0.0
 
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
-  pi install npm:pi-interactive-shell@0.13.0
+  pi install npm:pi-interactive-shell@0.14.0
 
 PI_CODING_AGENT_DIR="$HOME/.pi/profiles/trusted" \
   pi install npm:@juicesharp/rpiv-ask-user-question
